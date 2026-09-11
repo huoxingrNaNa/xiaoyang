@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xiao小小阳 · 我的世界</title>
+<style>
+  /* ===================== 基础 ===================== */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    line-height: 1.75;
+    color: #2b2b2b;
+    background: linear-gradient(180deg, #5fb8f5 0%, #8ed0fb 40%, #c6e9ff 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+  }
+
+  #bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ===================== 通用草方块（logo 还在用） ===================== */
+  .grass-block {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border: 3px solid #2b2b2b;
+    background-image: repeating-conic-gradient(#7cbd4b 0% 25%, #5d9c3c 0% 50%);
+    background-size: 8px 8px;
+    image-rendering: pixelated;
+  }
+
+  .grass-block::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 70%;
+    background-image: repeating-conic-gradient(#8b5a2b 0% 25%, #6f4520 0% 50%);
+    background-size: 8px 8px;
+  }
+
+  /* ===================== 导航 ===================== */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px clamp(14px, 4vw, 40px);
+    background: rgba(40, 40, 40, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 4px solid #1a1a1a;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.65);
+  }
+
+  .logo .grass-block {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+    animation: bob 3s ease-in-out infinite;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #cfcfcf;
+    text-decoration: none;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover {
+    color: #fff;
+    background: #6f6f6f;
+    border-color: #000;
+    box-shadow: inset 2px 2px 0 #9a9a9a, inset -2px -2px 0 #4a4a4a;
+  }
+
+  /* ===================== 主容器 ===================== */
+  main {
+    position: relative;
+    z-index: 2;
+    padding-bottom: 60px;
+  }
+
+  /* ===================== 首屏 ===================== */
+  .hero {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: clamp(44px, 9vw, 92px) 20px clamp(36px, 7vw, 68px);
+  }
+
+  /* ===== 头像区（Base64 内嵌版） ===== */
+  .hero-avatar {
+    width: clamp(96px, 22vw, 128px);
+    height: clamp(96px, 22vw, 128px);
+    margin: 0 auto 26px;
+    animation: float 4s ease-in-out infinite;
+    filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.28));
+  }
+
+  .hero-avatar img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: 5px solid #2b2b2b;
+    background: #fafafa;
+    box-sizing: border-box;
+    object-fit: cover;
+    border-radius: 8px;
+    image-rendering: pixelated;
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.18);
+  }
+
+  .hero-name {
+    font-size: clamp(32px, 8.5vw, 58px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #ffffff;
+    text-shadow:
+      3px 3px 0 #2b2b2b,
+      -1px -1px 0 #2b2b2b,
+      1px -1px 0 #2b2b2b,
+      -1px 1px 0 #2b2b2b,
+      0 10px 26px rgba(0, 0, 0, 0.28);
+    animation: rise 0.8s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .hero-role {
+    min-height: 1.8em;
+    margin-top: 12px;
+    font-size: clamp(14px, 3.6vw, 18px);
+    font-weight: 800;
+    color: #1e4a08;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .caret {
+    display: inline-block;
+    width: 9px;
+    height: 1.05em;
+    margin-left: 3px;
+    vertical-align: -3px;
+    background: #1e4a08;
+    animation: blink 1s step-end infinite;
+  }
+
+  .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+  }
+
+  .stat {
+    min-width: 104px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 3px solid #2b2b2b;
+    box-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.9),
+                inset -3px -3px 0 rgba(0, 0, 0, 0.14),
+                0 5px 0 rgba(0, 0, 0, 0.14);
+  }
+
+  .stat-num {
+    display: block;
+    font-size: 20px;
+    font-weight: 900;
+    color: #3d7a16;
+    line-height: 1.3;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+  }
+
+  .hero-btns {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+  }
+
+  .mc-btn {
+    display: inline-block;
+    padding: 12px 26px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    text-decoration: none;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+    background: #6f6f6f;
+    border: 3px solid #1a1a1a;
+    box-shadow: inset 3px 3px 0 #9a9a9a, inset -3px -3px 0 #4a4a4a;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .mc-btn:hover {
+    background: #8a8a8a;
+    box-shadow: inset 3px 3px 0 #b3b3b3, inset -3px -3px 0 #5c5c5c;
+  }
+
+  .mc-btn:active {
+    transform: translateY(2px);
+  }
+
+  .mc-btn.green {
+    background: #4f8f2c;
+    box-shadow: inset 3px 3px 0 #74b84c, inset -3px -3px 0 #35611c;
+  }
+
+  .mc-btn.green:hover {
+    background: #5da334;
+    box-shadow: inset 3px 3px 0 #86cc5c, inset -3px -3px 0 #3f7222;
+  }
+
+  /* ===================== 面板 ===================== */
+  .panel {
+    position: relative;
+    width: min(880px, calc(100% - 28px));
+    margin: 0 auto 34px;
+    padding: clamp(20px, 5vw, 36px);
+    background: #c6c6c6;
+    border: 4px solid #2b2b2b;
+    box-shadow:
+      inset 4px 4px 0 #ffffff,
+      inset -4px -4px 0 #8b8b8b,
+      0 10px 0 rgba(0, 0, 0, 0.16);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    font-size: clamp(18px, 4.2vw, 23px);
+    font-weight: 900;
+    color: #2b2b2b;
+    text-shadow: 1px 1px 0 #ffffff;
+    border-bottom: 3px solid #8b8b8b;
+    box-shadow: 0 3px 0 #e8e8e8;
+  }
+
+  .panel-title .icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    font-size: 15px;
+    background: #7cbd4b;
+    border: 3px solid #2b2b2b;
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .panel p {
+    font-size: 15px;
+    color: #3a3a3a;
+  }
+
+  .panel p + p {
+    margin-top: 12px;
+  }
+
+  .highlight {
+    padding: 2px 6px;
+    font-weight: 800;
+    color: #2b5c10;
+    background: rgba(124, 189, 75, 0.35);
+    border-bottom: 2px solid #5d9c3c;
+  }
+
+  /* ===================== 技能条 ===================== */
+  .skill + .skill {
+    margin-top: 20px;
+  }
+
+  .skill-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 7px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #2b2b2b;
+  }
+
+  .skill-head span:last-child {
+    font-size: 13px;
+    color: #5d9c3c;
+  }
+
+  .bar {
+    height: 20px;
+    background: #8b8b8b;
+    border: 3px solid #2b2b2b;
+    box-shadow: inset 2px 2px 0 #6b6b6b;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    width: 0;
+    height: 100%;
+    background: linear-gradient(180deg, #96e055 0%, #6cb83a 55%, #4f8f2c 100%);
+    box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.4);
+    transition: width 1.1s cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+
+  /* ===================== 成就 ===================== */
+  .achievements {
+    display: grid;
+    gap: 12px;
+  }
+
+  .ach {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 16px;
+    background: #4a4a4a;
+    border: 3px solid #1a1a1a;
+    box-shadow: inset 3px 3px 0 #6b6b6b, inset -3px -3px 0 #303030;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .ach:hover {
+    transform: translateX(5px);
+    background: #555;
+  }
+
+  .ach-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    font-size: 20px;
+    background: #7cbd4b;
+    border: 3px solid #1a1a1a;
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .ach-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #ffe97a;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+  }
+
+  .ach-desc {
+    font-size: 12.5px;
+    color: #b8b8b8;
+  }
+
+  /* ===================== 敬请期待 ===================== */
+  .coming-soon {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: clamp(50px, 10vw, 90px) 20px;
+    background-image: repeating-conic-gradient(#4a4a4a 0% 25%, #3d3d3d 0% 50%);
+    background-size: 16px 16px;
+    border: 3px solid #2b2b2b;
+    box-shadow:
+      inset 4px 4px 0 rgba(255, 255, 255, 0.08),
+      inset -4px -4px 0 rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .coming-soon::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(124, 189, 75, 0.18), transparent 60%);
+    pointer-events: none;
+  }
+
+  .coming-soon-icon {
+    position: relative;
+    font-size: clamp(40px, 9vw, 64px);
+    margin-bottom: 22px;
+    animation: float 3.5s ease-in-out infinite;
+    filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
+  }
+
+  .coming-soon-title {
+    position: relative;
+    font-size: clamp(24px, 6vw, 36px);
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #ffe97a;
+    text-shadow:
+      3px 3px 0 #2b2b2b,
+      -1px -1px 0 #2b2b2b,
+      1px -1px 0 #2b2b2b,
+      -1px 1px 0 #2b2b2b;
+    margin-bottom: 14px;
+  }
+
+  .coming-soon-desc {
+    position: relative;
+    font-size: clamp(13px, 3vw, 15px);
+    font-weight: 700;
+    color: #d8d8d8;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+    line-height: 1.8;
+    max-width: 360px;
+  }
+
+  .coming-soon-dots {
+    position: relative;
+    display: inline-flex;
+    gap: 8px;
+    margin-top: 26px;
+  }
+
+  .coming-soon-dots span {
+    width: 10px;
+    height: 10px;
+    background: #7cbd4b;
+    border: 2px solid #2b2b2b;
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.4);
+    animation: dotBounce 1.4s ease-in-out infinite;
+  }
+
+  .coming-soon-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .coming-soon-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  /* ===================== 联系 ===================== */
+  .contact-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  /* ===================== 页脚 ===================== */
+  footer {
+    position: relative;
+    z-index: 2;
+    padding: 34px 20px 42px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e4a08;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  footer .line {
+    width: 60px;
+    height: 4px;
+    margin: 0 auto 16px;
+    background: #5d9c3c;
+    border: 2px solid #2b2b2b;
+  }
+
+  /* ===================== 动画 ===================== */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===================== 响应式 ===================== */
+  @media (max-width: 560px) {
+    .logo span:last-child { font-size: 15px; }
+    .stat { min-width: 88px; padding: 10px 12px; }
+    .stat-num { font-size: 17px; }
+    .mc-btn { padding: 11px 18px; font-size: 14px; }
+    .panel {
+      box-shadow: inset 3px 3px 0 #ffffff, inset -3px -3px 0 #8b8b8b, 0 7px 0 rgba(0, 0, 0, 0.16);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<header class="nav">
+  <div class="logo">
+    <span class="grass-block"></span>
+    <span>xiao小小阳</span>
+  </div>
+  <nav class="nav-links">
+    <a href="#about">关于</a>
+    <a href="#skills">技能</a>
+    <a href="#achievements">成就</a>
+    <a href="#works">作品</a>
+    <a href="#contact">联系</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero">
+    <!-- ===== 头像换成 Base64 内嵌图片 ===== -->
+    <div class="hero-avatar">
+      <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAENAR8DASIAAhEBAxEB/8QAHQAAAQMFAQAAAAAAAAAAAAAAAAQGBwECAwUICf/EAGwQAAEDAgMDAwoMDA8OBAcAAAEAAgMEEQUGEgchMRMUMkFRYXGBkZLR0ggVIzNCUqGxssHh8BYkQ1NUYnJzdIKUorMXNjVEY4OTlKKktOHxJSY0NzhDRVZkdYWVwtL/xAAaAQEAAgMBAQAAAAAAAAAAAAAAAQIDBAUGB//EADERAAICAQMDAwIFBAMBAAAAAAABAhEDBBIhBTFBEyJRYXEGFDKBkSNCobFSYsHR8P/aAAwDAQACEQMRAD8A9KkIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCAEIQgBCEIAQhCA//2Q==" alt="xiao小小阳">
+    </div>
+
+    <h1 class="hero-name">xiao小小阳</h1>
+
+    <p class="hero-role">
+      <span id="typed"></span><span class="caret"></span>
+    </p>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">47</span>
+        <span class="stat-label">粉丝</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">12</span>
+        <span class="stat-label">视频</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">169</span>
+        <span class="stat-label">获赞</span>
+      </div>
+    </div>
+
+    <div class="hero-btns">
+      <a class="mc-btn green" href="#works">看看作品</a>
+      <a class="mc-btn" href="#contact">联系我</a>
+    </div>
+  </section>
+
+  <section class="panel" id="about">
+    <h2 class="panel-title">
+      <span class="icon">🧱</span>关于我
+    </h2>
+    <p>
+      你好，我是 <span class="highlight">xiao小小阳</span>，一个在方块世界里默默努力的新人 UP 主。
+    </p>
+    <p>
+      B 站主页签名说“这个人很神秘，什么都没有写”，其实我只是把想说的话都放进视频里了。
+      目前正在钻研 <span class="highlight">Minecraft 动画制作</span>，做着 BBS 动画小练习系列。
+    </p>
+    <p>
+      坐标海南，如果你也喜欢方块世界，欢迎来看看我的小练习，见证我从 LV3 慢慢升级！
+    </p>
+  </section>
+
+  <section class="panel" id="skills">
+    <h2 class="panel-title">
+      <span class="icon">⛏️</span>技能面板
+    </h2>
+
+    <div class="skill">
+      <div class="skill-head"><span>Minecraft 动画</span><span>85%</span></div>
+      <div class="bar"><div class="bar-fill" data-width="85"></div></div>
+    </div>
+
+    <div class="skill">
+      <div class="skill-head"><span>BBS 动画练习</span><span>70%</span></div>
+      <div class="bar"><div class="bar-fill" data-width="70"></div></div>
+    </div>
+
+    <div class="skill">
+      <div class="skill-head"><span>生存与探索</span><span>80%</span></div>
+      <div class="bar"><div class="bar-fill" data-width="80"></div></div>
+    </div>
+
+    <div class="skill">
+      <div class="skill-head"><span>视频剪辑</span><span>65%</span></div>
+      <div class="bar"><div class="bar-fill" data-width="65"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="achievements">
+    <h2 class="panel-title">
+      <span class="icon">🏆</span>成就列表
+    </h2>
+
+    <div class="achievements">
+      <div class="ach">
+        <div class="ach-icon">🎬</div>
+        <div>
+          <div class="ach-title">动画启程</div>
+          <div class="ach-desc">开始制作 BBS 动画小练习系列</div>
+        </div>
+      </div>
+
+      <div class="ach">
+        <div class="ach-icon">⭐</div>
+        <div>
+          <div class="ach-title">突破 LV3</div>
+          <div class="ach-desc">B 站等级达到 3803/4500 经验</div>
+        </div>
+      </div>
+
+      <div class="ach">
+        <div class="ach-icon">📹</div>
+        <div>
+          <div class="ach-title">坚持投稿</div>
+          <div class="ach-desc">已发布 12 个视频作品</div>
+        </div>
+      </div>
+
+      <div class="ach">
+        <div class="ach-icon">❤️</div>
+        <div>
+          <div class="ach-title">收获认可</div>
+          <div class="ach-desc">累计获得 169 次点赞</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="works">
+    <h2 class="panel-title">
+      <span class="icon">📺</span>作品展示
+    </h2>
+
+    <div class="coming-soon">
+      <div class="coming-soon-icon">📦</div>
+      <div class="coming-soon-title">敬请期待</div>
+      <p class="coming-soon-desc">
+        作品正在整理中<br>
+        新内容很快就会和大家见面
+      </p>
+      <div class="coming-soon-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="contact">
+    <h2 class="panel-title">
+      <span class="icon">✉️</span>找到我
+    </h2>
+    <p>想一起玩、提建议，或者单纯来打个招呼，都可以从这里找到我。</p>
+
+    <div class="contact-list" style="margin-top:20px;">
+      <a class="mc-btn green" href="https://space.bilibili.com/1452804418" target="_blank">📺 B站主页</a>
+      <a class="mc-btn" href="#">💬 粉丝群</a>
+      <a class="mc-btn" href="#">📮 邮箱</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="line"></div>
+  xiao小小阳 · 用方块搭一个世界
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ================= 背景像素粒子 ================= */
+  var canvas = document.getElementById("bg");
+  var ctx = canvas.getContext("2d");
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var W = 0, H = 0;
+  var particles = [];
+
+  function makeParticle(randomY) {
+    var size = (Math.floor(Math.random() * 3) + 1) * 4;
+    return {
+      x: Math.random() * W,
+      y: randomY ? Math.random() * H : -30,
+      size: size,
+      vy: Math.random() * 0.55 + 0.25,
+      vx: (Math.random() - 0.5) * 0.35,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.02,
+      alpha: Math.random() * 0.28 + 0.10,
+      tint: Math.random() > 0.78 ? "#7cbd4b" : "#ffffff"
+    };
+  }
+
+  function initParticles() {
+    var count = Math.floor((W * H) / 34000);
+    count = Math.max(14, Math.min(46, count));
+    particles = [];
+    for (var i = 0; i < count; i++) {
+      particles.push(makeParticle(true));
+    }
+  }
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initParticles();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+
+      p.y += p.vy;
+      p.x += p.vx;
+      p.rot += p.vr;
+
+      if (p.y > H + 40) {
+        particles[i] = makeParticle(false);
+        continue;
+      }
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.tint;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
+  });
+
+  resize();
+  if (!reduceMotion) {
+    draw();
+  }
+
+  /* ================= 打字机 ================= */
+  var roles = [
+    "Minecraft 动画创作者",
+    "BBS 动画练习生",
+    "方块世界探索者",
+    "努力升级的 LV3 新手"
+  ];
+
+  var typedEl = document.getElementById("typed");
+  var roleIndex = 0;
+  var charIndex = 0;
+  var deleting = false;
+
+  function typeTick() {
+    var word = roles[roleIndex];
+
+    if (!deleting) {
+      charIndex++;
+      typedEl.textContent = word.slice(0, charIndex);
+
+      if (charIndex >= word.length) {
+        deleting = true;
+        setTimeout(typeTick, 1600);
+        return;
+      }
+      setTimeout(typeTick, 120);
+      return;
+    }
+
+    charIndex--;
+    typedEl.textContent = word.slice(0, charIndex);
+
+    if (charIndex <= 0) {
+      deleting = false;
+      roleIndex = (roleIndex + 1) % roles.length;
+      setTimeout(typeTick, 380);
+      return;
+    }
+    setTimeout(typeTick, 55);
+  }
+
+  if (reduceMotion) {
+    typedEl.textContent = roles[0];
+  } else {
+    setTimeout(typeTick, 700);
+  }
+
+  /* ================= 技能条动画 ================= */
+  var fills = document.querySelectorAll(".bar-fill");
+
+  function fillBars() {
+    for (var i = 0; i < fills.length; i++) {
+      (function (el, idx) {
+        setTimeout(function () {
+          el.style.width = el.getAttribute("data-width") + "%";
+        }, idx * 130);
+      })(fills[i], i);
+    }
+  }
+
+  if ("IntersectionObserver" in window) {
+    var skillsSection = document.getElementById("skills");
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          fillBars();
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.25 });
+
+    observer.observe(skillsSection);
+  } else {
+    fillBars();
+  }
+
+})();
+</script>
+
+</body>
+</html>
