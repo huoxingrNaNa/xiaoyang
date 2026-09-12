@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全部作品 · xiao小小阳</title>
+<meta name="description" content="xiao小小阳的全部 B 站作品列表（BBS 动画小练习系列）。">
+<meta name="theme-color" content="#5fb8f5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%238b5a2b'/%3E%3Crect width='16' height='7' fill='%237cbd4b'/%3E%3Crect y='5' width='16' height='2' fill='%235d9c3c'/%3E%3C/svg%3E">
+<link rel="canonical" href="https://huoxingrnana.github.io/xiaoyang/works.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="全部作品 · xiao小小阳">
+<meta property="og:description" content="xiao小小阳的全部 B 站作品列表（BBS 动画小练习系列）。">
+<meta property="og:url" content="https://huoxingrnana.github.io/xiaoyang/works.html">
+<meta property="og:image" content="https://huoxingrnana.github.io/xiaoyang/og.jpg">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    line-height: 1.75;
+    color: #2b2b2b;
+    background: linear-gradient(180deg, #5fb8f5 0%, #8ed0fb 40%, #c6e9ff 100%);
+    background-attachment: fixed;
+  }
+
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px clamp(14px, 4vw, 40px);
+    background: rgba(40, 40, 40, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 4px solid #1a1a1a;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+  }
+
+  .nav a { text-decoration: none; }
+
+  .back {
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    background: #6f6f6f;
+    border: 2px solid #1a1a1a;
+    box-shadow: inset 2px 2px 0 #9a9a9a, inset -2px -2px 0 #4a4a4a;
+  }
+
+  .back:hover { background: #8a8a8a; }
+
+  .logo {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wrap {
+    width: min(1060px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 26px 0 20px;
+  }
+
+  .panel {
+    padding: clamp(18px, 4vw, 32px);
+    background: #c6c6c6;
+    border: 4px solid #2b2b2b;
+    box-shadow: inset 4px 4px 0 #ffffff, inset -4px -4px 0 #8b8b8b, 0 10px 0 rgba(0, 0, 0, 0.16);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    font-size: clamp(18px, 4.2vw, 23px);
+    font-weight: 900;
+    color: #2b2b2b;
+    text-shadow: 1px 1px 0 #ffffff;
+    border-bottom: 3px solid #8b8b8b;
+    box-shadow: 0 3px 0 #e8e8e8;
+  }
+
+  .panel-title .icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+    background: #7cbd4b;
+    border: 3px solid #2b2b2b;
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .count-tag {
+    padding: 2px 9px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #fff;
+    background: #7cbd4b;
+    border: 2px solid #2b2b2b;
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .tip {
+    margin: 10px 0 20px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4a6b2c;
+  }
+
+  .tip a { color: #2b5c10; }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 16px;
+  }
+
+  .vcard {
+    display: block;
+    text-decoration: none;
+    transition: transform 0.16s ease;
+  }
+
+  .vcard:hover { transform: translateY(-4px); }
+
+  .vthumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    background: #8b8b8b;
+    border: 3px solid #2b2b2b;
+    box-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.25), 0 5px 0 rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+  }
+
+  .vthumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  .vtime {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.72);
+    border: 2px solid #1a1a1a;
+  }
+
+  .vtitle {
+    display: block;
+    margin-top: 9px;
+    font-size: 13.5px;
+    font-weight: 800;
+    line-height: 1.5;
+    color: #2b2b2b;
+  }
+
+  .vmeta {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #5d9c3c;
+  }
+
+  footer {
+    padding: 26px 20px 42px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e4a08;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  @media (max-width: 560px) {
+    .video-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .vtitle { font-size: 12.5px; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      color: #d7e1ef;
+      background: linear-gradient(180deg, #070b14 0%, #10192e 45%, #1b2740 100%);
+    }
+
+    .nav { background: rgba(9, 13, 22, 0.9); border-bottom-color: #05070c; }
+
+    .panel {
+      background: #222a37;
+      border-color: #090c12;
+      box-shadow: inset 4px 4px 0 #2f3a4b, inset -4px -4px 0 #161c27, 0 10px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .panel-title {
+      color: #eaf2ff;
+      text-shadow: 1px 1px 0 #0a0e15;
+      border-bottom-color: #3b4658;
+      box-shadow: 0 3px 0 #2b3444;
+    }
+
+    .tip { color: #9fc47f; }
+    .tip a { color: #cdf7a8; }
+    .vtitle { color: #e8f0fb; }
+    .vmeta { color: #a8e57d; }
+    .vthumb { background: #2a3342; border-color: #090c12; }
+    footer { color: #9ec27f; text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6); }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="back" href="index.html">← 返回首页</a>
+  <span class="logo">xiao小小阳 · 全部作品</span>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <h2 class="panel-title">
+      <span class="icon">📺</span>全部作品 <span class="count-tag">12</span>
+    </h2>
+
+    <p class="tip">
+      按发布时间从新到旧 · 点封面去 B 站播放 ·
+      <a href="https://space.bilibili.com/1452804418/video" target="_blank" rel="noopener">B 站空间 ↗</a>
+    </p>
+
+    <!-- VIDEOS-DATA-START（自动更新脚本只改这一段） -->
+    <script id="video-data" type="application/json">[{"bvid":"BV1N7kWB7Eit","title":"【BBS】动画小练习11","cover":"https://i0.hdslb.com/bfs/archive/83803ad15465ab83a41130c2dd431e1a5d526069.jpg@480w_300h_1c.webp","play":463,"dur":"0:36","date":"2026-01-18"},{"bvid":"BV1uA2ZB8EBQ","title":"【BBS】动画小练习10","cover":"https://i2.hdslb.com/bfs/archive/8853f59f9b4d47ae530b6daa2d3777170e33e74d.jpg@480w_300h_1c.webp","play":130,"dur":"0:09","date":"2025-12-07"},{"bvid":"BV1sxSTBpEf3","title":"【BBS】动画小练习9","cover":"https://i0.hdslb.com/bfs/archive/02b6e9d6f6b4b859c52e7661f01fe78584665130.jpg@480w_300h_1c.webp","play":206,"dur":"0:14","date":"2025-11-30"},{"bvid":"BV1QBUfB3E6F","title":"【BBS】动画小练习8","cover":"https://i1.hdslb.com/bfs/archive/03a1409b9f10a0878fa7548f01736810f703e8d0.jpg@480w_300h_1c.webp","play":52,"dur":"0:07","date":"2025-11-29"},{"bvid":"BV1neUdB7EaK","title":"【BBS】动画小练习7","cover":"https://i0.hdslb.com/bfs/archive/7c4f7bbc10c6b8c44f908a6bcba863234ac95a3b.jpg@480w_300h_1c.webp","play":276,"dur":"0:45","date":"2025-11-29"},{"bvid":"BV1giS7BxE1k","title":"[BBS]动画小练习 6","cover":"https://i0.hdslb.com/bfs/archive/e88675ea78bac10a8c720ff41f18af5dc3be4574.jpg@480w_300h_1c.webp","play":98,"dur":"0:07","date":"2025-11-28"},{"bvid":"BV1cMUnBEEXe","title":"【BBS】动画小练习5","cover":"https://i0.hdslb.com/bfs/archive/164a7eb3d024ce2ab16cb095c8085270a18adf54.jpg@480w_300h_1c.webp","play":371,"dur":"0:32","date":"2025-11-22"},{"bvid":"BV1MSCDBPECT","title":"[BBS]动画小练习4独攀","cover":"https://i2.hdslb.com/bfs/archive/ae9f0bcc1b6992e1946554e2b1a9d4c8d969ca48.jpg@480w_300h_1c.webp","play":266,"dur":"0:16","date":"2025-11-16"},{"bvid":"BV1UhCQBNEFQ","title":"【BBS】动画小练习3","cover":"https://i0.hdslb.com/bfs/archive/c844e362c41bd0aa1c1f588def28ba861e2dca21.jpg@480w_300h_1c.webp","play":336,"dur":"0:46","date":"2025-11-16"},{"bvid":"BV1xnkUBHEJ2","title":"【BBS】动画小练习2","cover":"https://i1.hdslb.com/bfs/archive/85145c749dc890cdcba8fc1bedd3285273fc8172.jpg@480w_300h_1c.webp","play":278,"dur":"0:13","date":"2025-11-09"},{"bvid":"BV17s1SBJEvY","title":"【BBS】动画小练习","cover":"https://i1.hdslb.com/bfs/archive/5a6ebd1dcbf640fd06372dbd0208440c9079b97a.jpg@480w_300h_1c.webp","play":1817,"dur":"0:31","date":"2025-11-08"},{"bvid":"BV1kibXz6Ewr","title":"如果你是方块人你就跳舞🎵","cover":"https://i2.hdslb.com/bfs/archive/050bf2efee38d1f90785d06d3433b323871c4df7.jpg@480w_300h_1c.webp","play":3087,"dur":"0:15","date":"2025-07-25"}]</script>
+    <!-- VIDEOS-DATA-END -->
+
+    <div class="video-grid" id="video-grid"></div>
+  </section>
+</main>
+
+<footer>xiao小小阳 · 用方块搭一个世界</footer>
+
+<script>
+(function () {
+  "use strict";
+  var dataEl = document.getElementById("video-data");
+  var grid = document.getElementById("video-grid");
+  var videos = [];
+
+  try { videos = JSON.parse(dataEl.textContent) || []; } catch (e) { videos = []; }
+
+  if (!videos.length) {
+    grid.innerHTML = '<p style="font-size:14px;font-weight:700;">作品整理中…</p>';
+    return;
+  }
+
+  var html = "";
+  for (var i = 0; i < videos.length; i++) {
+    var v = videos[i];
+    html += '<a class="vcard" href="https://www.bilibili.com/video/' + v.bvid +
+            '" target="_blank" rel="noopener">' +
+            '<span class="vthumb"><img src="' + v.cover + '" alt="' +
+            String(v.title).replace(/"/g, "&" + "quot;") +
+            '" loading="lazy" referrerpolicy="no-referrer">' +
+            '<span class="vtime">' + v.dur + '</span></span>' +
+            '<span class="vtitle">' + v.title + '</span>' +
+            '<span class="vmeta">▶ ' + v.play + ' 次播放 · ' + v.date + '</span></a>';
+  }
+  grid.innerHTML = html;
+})();
+</script>
+
+</body>
+</html>
