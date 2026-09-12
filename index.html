@@ -1025,6 +1025,10 @@
     </div>
 
     <div class="video-grid" id="video-grid"></div>
+  
+    <div class="works-more">
+      <a class="mc-btn green" href="works.html">查看全部 <span data-stat="videos">12</span> 个作品 →</a>
+    </div>
   </section>
 
   <section class="panel" id="contact">
@@ -1262,7 +1266,8 @@
 
     function buildGrid() {
       var html = "";
-      for (var i = 0; i < videos.length; i++) {
+      var preview = Math.min(6, videos.length);
+      for (var i = 0; i < preview; i++) {
         var v = videos[i];
         html += '<a class="vcard" data-i="' + i + '" href="https://www.bilibili.com/video/' + v.bvid +
                 '" target="_blank" rel="noopener">' +
