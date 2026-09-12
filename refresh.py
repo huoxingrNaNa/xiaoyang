@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""刷新 xiaoyang 主页的数据：视频卡片 + 粉丝/视频/获赞 + 更新日期。
+"""刷新 xiaoyang 主页的数据：视频卡片（首页 + 全部作品页）+ 粉丝/视频/获赞 + 更新日期。
 
 用法:
-    python3 refresh.py                # 拉数据 -> 改 index.html -> 上传 GitHub
+    python3 refresh.py                # 拉数据 -> 改页面 -> 上传 GitHub
     python3 refresh.py --local-only   # 只改本地文件，不上传（给 GitHub Actions 用）
+
+改动的文件:
+    index.html   视频数据 + 粉丝/作品数/获赞 + 更新日期
+    works.html   视频数据（全部作品页）
 
 数据来源（B 站 App 签名接口，不需要登录 / Cookie）：
     app.bilibili.com/x/v2/space/archive/cursor   -> 投稿列表（含播放量、封面、时长）
@@ -25,7 +29,8 @@ APPSEC = '560c52ccd288fed045859ed18bffd973'
 MID = '1452804418'
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, 'index.html')
+SITES = ['index.html', 'works.html']   # 都含 VIDEOS-DATA 标记
+STATS_FILE = 'index.html'              # 粉丝/获赞只写首页
 UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36'
 
 
@@ -74,8 +79,7 @@ def fetch_stats(old_likes):
 
 
 def set_stat(html, key, value):
-    new, n = re.subn(r'data-stat="%s">[^<]*<' % key, 'data-stat="%s">%s<' % (key, value), html)
-    return new, n
+    return re.subn(r'data-stat="%s">[^<]*<' % key, 'data-stat="%s">%s<' % (key, value), html)[0]
 
 
 def patch_html(html, total, vids, stats):
@@ -85,12 +89,12 @@ def patch_html(html, total, vids, stats):
     if n != 1:
         raise RuntimeError('视频数据区匹配 %d 次，中止' % n)
 
-    html, _ = set_stat(html, 'videos', total)
-    html, _ = set_stat(html, 'updated', time.strftime('%Y-%m-%d'))
+    html = set_stat(html, 'videos', total)
+    html = set_stat(html, 'updated', time.strftime('%Y-%m-%d'))
     if stats.get('fans') is not None:
-        html, _ = set_stat(html, 'fans', stats['fans'])
+        html = set_stat(html, 'fans', stats['fans'])
     if stats.get('likes') is not None:
-        html, _ = set_stat(html, 'likes', stats['likes'])
+        html = set_stat(html, 'likes', stats['likes'])
     return html
 
 
@@ -101,31 +105,44 @@ def current_likes(html):
 
 def main():
     local_only = '--local-only' in sys.argv
-    html = io.open(SRC, encoding='utf-8').read()
+    stat_path = os.path.join(HERE, STATS_FILE)
+    stat_html = io.open(stat_path, encoding='utf-8').read() if os.path.isfile(stat_path) else ''
 
     try:
         total, vids = fetch_videos()
-        stats = fetch_stats(current_likes(html))
+        stats = fetch_stats(current_likes(stat_html))
     except Exception as e:
         print('拉取 B 站数据失败：%s' % e)
         print('（网络不通或被风控时不影响线上页面，本次不做任何修改）')
         return 0
 
-    new = patch_html(html, total, vids, stats)
     print('视频 %d 个 / 粉丝 %s / 获赞 %s' % (total, stats.get('fans'), stats.get('likes')))
-    if new == html:
-        print('页面数据无变化')
-    else:
-        io.open(SRC, 'w', encoding='utf-8').write(new)
-        print('index.html 已更新（%d -> %d 字符）' % (len(html), len(new)))
 
-    if local_only:
+    changed = []
+    for name in SITES:
+        path = os.path.join(HERE, name)
+        if not os.path.isfile(path):
+            print('%-12s 不存在，跳过' % name)
+            continue
+        html = io.open(path, encoding='utf-8').read()
+        new = patch_html(html, total, vids, stats if name == STATS_FILE else {})
+        if new == html:
+            print('%-12s 无变化' % name)
+            continue
+        io.open(path, 'w', encoding='utf-8').write(new)
+        print('%-12s 已更新（%d -> %d 字符）' % (name, len(html), len(new)))
+        changed.append(name)
+
+    if not changed:
+        print('两页数据都是最新的')
+    if local_only or not changed:
         return 0
 
     sys.path.insert(0, HERE)
     import upload as up
     full = up.resolve_repo()
-    up.put(full, 'index.html', 'chore: 自动更新作品数据')
+    for name in changed:
+        up.put(full, name, 'chore: 自动更新作品数据')
     print('线上地址: https://%s.github.io/%s/' % (up.OWNER.lower(), up.REPO))
     return 0
 
