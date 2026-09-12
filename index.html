@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>xiao小小阳 · 我的世界</title>
+<meta name="description" content="xiao小小阳 —— 来自海南的 Minecraft 动画 UP 主，「BBS 动画小练习」系列作者。这里有我的作品、技能面板和联系方式。">
+<meta name="author" content="xiao小小阳">
+<meta name="theme-color" content="#5fb8f5">
+<link rel="canonical" href="https://huoxingrnana.github.io/xiaoyang/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%238b5a2b'/%3E%3Crect width='16' height='7' fill='%237cbd4b'/%3E%3Crect y='5' width='16' height='2' fill='%235d9c3c'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="xiao小小阳的个人主页">
+<meta property="og:title" content="xiao小小阳 · 我的世界">
+<meta property="og:description" content="xiao小小阳 —— 来自海南的 Minecraft 动画 UP 主，「BBS 动画小练习」系列作者。这里有我的作品、技能面板和联系方式。">
+<meta property="og:url" content="https://huoxingrnana.github.io/xiaoyang/">
+<meta property="og:image" content="https://huoxingrnana.github.io/xiaoyang/avatar.jpg">
+<meta property="og:image:width" content="287">
+<meta property="og:image:height" content="269">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="xiao小小阳 · 我的世界">
+<meta name="twitter:description" content="xiao小小阳 —— 来自海南的 Minecraft 动画 UP 主，「BBS 动画小练习」系列作者。这里有我的作品、技能面板和联系方式。">
+<meta name="twitter:image" content="https://huoxingrnana.github.io/xiaoyang/avatar.jpg">
 <style>
   /* ===================== 基础 ===================== */
   *, *::before, *::after {
@@ -537,9 +555,113 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ===================== 数据更新说明 ===================== */
+  .hero-updated {
+    margin-top: 16px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #1e4a08;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.55);
+    opacity: 0.9;
+  }
+
+  /* ===================== 作品卡片 ===================== */
+  .count-tag {
+    padding: 2px 9px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #fff;
+    background: #7cbd4b;
+    border: 2px solid #2b2b2b;
+    box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 16px;
+  }
+
+  .vcard {
+    display: block;
+    text-decoration: none;
+    transition: transform 0.16s ease, filter 0.16s ease;
+  }
+
+  .vcard:hover {
+    transform: translateY(-4px);
+    filter: brightness(1.03);
+  }
+
+  .vthumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    background: #8b8b8b;
+    border: 3px solid #2b2b2b;
+    box-shadow: inset 3px 3px 0 rgba(255, 255, 255, 0.25),
+                inset -3px -3px 0 rgba(0, 0, 0, 0.22),
+                0 5px 0 rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+  }
+
+  .vthumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .vtime {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.72);
+    border: 2px solid #1a1a1a;
+  }
+
+  .vtitle {
+    display: block;
+    margin-top: 9px;
+    font-size: 13.5px;
+    font-weight: 800;
+    line-height: 1.5;
+    color: #2b2b2b;
+  }
+
+  .vmeta {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #5d9c3c;
+  }
+
+  .works-more {
+    margin-top: 24px;
+    text-align: center;
+  }
+
+  .mc-btn.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+  }
+
+  .mc-btn.disabled:hover {
+    background: #6f6f6f;
+    box-shadow: inset 3px 3px 0 #9a9a9a, inset -3px -3px 0 #4a4a4a;
+  }
+
   /* ===================== 响应式 ===================== */
   @media (max-width: 560px) {
     .logo span:last-child { font-size: 15px; }
+    .video-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .vtitle { font-size: 12.5px; }
     .stat { min-width: 88px; padding: 10px 12px; }
     .stat-num { font-size: 17px; }
     .mc-btn { padding: 11px 18px; font-size: 14px; }
@@ -604,6 +726,7 @@
         <span class="stat-label">获赞</span>
       </div>
     </div>
+    <p class="hero-updated">数据更新于 2026-09-12 · 共 12 个作品</p>
 
     <div class="hero-btns">
       <a class="mc-btn green" href="#works">看看作品</a>
@@ -695,21 +818,62 @@
 
   <section class="panel" id="works">
     <h2 class="panel-title">
-      <span class="icon">📺</span>作品展示
+      <span class="icon">📺</span>作品展示 <span class="count-tag">12</span>
     </h2>
 
-    <div class="coming-soon">
-      <div class="coming-soon-icon">📦</div>
-      <div class="coming-soon-title">敬请期待</div>
-      <p class="coming-soon-desc">
-        作品正在整理中<br>
-        新内容很快就会和大家见面
-      </p>
-      <div class="coming-soon-dots">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
+    <div class="video-grid">
+      <a class="vcard" href="https://www.bilibili.com/video/BV1N7kWB7Eit" target="_blank" rel="noopener">
+        <span class="vthumb">
+          <img src="https://i0.hdslb.com/bfs/archive/83803ad15465ab83a41130c2dd431e1a5d526069.jpg@480w_300h_1c.webp" alt="【BBS】动画小练习11" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vtime">0:36</span>
+        </span>
+        <span class="vtitle">【BBS】动画小练习11</span>
+        <span class="vmeta">▶ 463 次播放 · 2026-01-18</span>
+      </a>
+      <a class="vcard" href="https://www.bilibili.com/video/BV1uA2ZB8EBQ" target="_blank" rel="noopener">
+        <span class="vthumb">
+          <img src="https://i2.hdslb.com/bfs/archive/8853f59f9b4d47ae530b6daa2d3777170e33e74d.jpg@480w_300h_1c.webp" alt="【BBS】动画小练习10" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vtime">0:09</span>
+        </span>
+        <span class="vtitle">【BBS】动画小练习10</span>
+        <span class="vmeta">▶ 130 次播放 · 2025-12-07</span>
+      </a>
+      <a class="vcard" href="https://www.bilibili.com/video/BV1sxSTBpEf3" target="_blank" rel="noopener">
+        <span class="vthumb">
+          <img src="https://i0.hdslb.com/bfs/archive/02b6e9d6f6b4b859c52e7661f01fe78584665130.jpg@480w_300h_1c.webp" alt="【BBS】动画小练习9" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vtime">0:14</span>
+        </span>
+        <span class="vtitle">【BBS】动画小练习9</span>
+        <span class="vmeta">▶ 206 次播放 · 2025-11-30</span>
+      </a>
+      <a class="vcard" href="https://www.bilibili.com/video/BV1QBUfB3E6F" target="_blank" rel="noopener">
+        <span class="vthumb">
+          <img src="https://i1.hdslb.com/bfs/archive/03a1409b9f10a0878fa7548f01736810f703e8d0.jpg@480w_300h_1c.webp" alt="【BBS】动画小练习8" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vtime">0:07</span>
+        </span>
+        <span class="vtitle">【BBS】动画小练习8</span>
+        <span class="vmeta">▶ 52 次播放 · 2025-11-29</span>
+      </a>
+      <a class="vcard" href="https://www.bilibili.com/video/BV1neUdB7EaK" target="_blank" rel="noopener">
+        <span class="vthumb">
+          <img src="https://i0.hdslb.com/bfs/archive/7c4f7bbc10c6b8c44f908a6bcba863234ac95a3b.jpg@480w_300h_1c.webp" alt="【BBS】动画小练习7" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vtime">0:45</span>
+        </span>
+        <span class="vtitle">【BBS】动画小练习7</span>
+        <span class="vmeta">▶ 276 次播放 · 2025-11-29</span>
+      </a>
+      <a class="vcard" href="https://www.bilibili.com/video/BV1giS7BxE1k" target="_blank" rel="noopener">
+        <span class="vthumb">
+          <img src="https://i0.hdslb.com/bfs/archive/e88675ea78bac10a8c720ff41f18af5dc3be4574.jpg@480w_300h_1c.webp" alt="[BBS]动画小练习 6" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vtime">0:07</span>
+        </span>
+        <span class="vtitle">[BBS]动画小练习 6</span>
+        <span class="vmeta">▶ 98 次播放 · 2025-11-28</span>
+      </a>
+    </div>
+
+    <div class="works-more">
+      <a class="mc-btn green" href="https://space.bilibili.com/1452804418/video" target="_blank" rel="noopener">在 B 站看全部 12 个作品 →</a>
     </div>
   </section>
 
@@ -721,8 +885,8 @@
 
     <div class="contact-list" style="margin-top:20px;">
       <a class="mc-btn green" href="https://space.bilibili.com/1452804418" target="_blank">📺 B站主页</a>
-      <a class="mc-btn" href="#">💬 粉丝群</a>
-      <a class="mc-btn" href="#">📮 邮箱</a>
+      <span class="mc-btn disabled" title="暂未开放">💬 粉丝群 · 暂未开放</span>
+      <a class="mc-btn" href="https://message.bilibili.com/#/whisper/mid1452804418" target="_blank" rel="noopener">📮 B 站私信</a>
     </div>
   </section>
 
