@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方块工坊 · xiao小小阳</title>
+<meta name="description" content="xiao小小阳的个人主页小游戏：挖方块、攒材料、合成镐子，看看你能挖到几颗钻石。">
+<meta name="theme-color" content="#5fb8f5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%238b5a34'/%3E%3Crect width='16' height='5' fill='%2367b344'/%3E%3C/svg%3E">
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  min-height: 100vh; padding: 18px 14px 96px;
+  background: linear-gradient(180deg, #5fb8f5 0%, #8ed0fb 40%, #c6e9ff 100%);
+  background-attachment: fixed; color: #12263a;
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.back {
+  display: inline-block; padding: 7px 14px; border-radius: 999px; text-decoration: none;
+  font-weight: 700; font-size: 13px; background: rgba(255,255,255,.55); color: #0d2233;
+  border: 1px solid rgba(0,0,0,.08);
+}
+.logo { font-weight: 800; font-size: 13px; letter-spacing: .5px; opacity: .8; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+.sub { opacity: .78; font-size: 13px; margin: 0 0 16px; }
+.sub span { opacity: .7; }
+.panel {
+  background: rgba(255,255,255,.55); border: 1px solid rgba(0,0,0,.08); border-radius: 14px;
+  padding: 14px; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(12,40,70,.12);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.panel h2 { font-size: 14px; margin: 0 0 10px; letter-spacing: .5px; opacity: .9; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.tagline { font-size: 12px; opacity: .6; font-weight: 400; }
+
+/* ---------- 矿区 ---------- */
+.grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; }
+.blk {
+  position: relative; aspect-ratio: 1 / 1; border: 0; padding: 0; border-radius: 3px; cursor: pointer;
+  background: #7cbf5a; transition: transform .07s ease, filter .15s ease, opacity .3s ease;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.22), inset 2px 2px 0 rgba(255,255,255,.16);
+}
+.blk:hover { filter: brightness(1.09); }
+.blk:active { transform: scale(.93); }
+.blk.shake { animation: blkShake .13s; }
+@keyframes blkShake {
+  0% { transform: translate(0,0); } 25% { transform: translate(-2px,1px); }
+  50% { transform: translate(2px,-1px); } 75% { transform: translate(-1px,-2px); } 100% { transform: translate(0,0); }
+}
+.blk[data-t="grass"] { background: linear-gradient(180deg, #67b344 0 22%, #8b5a34 22% 100%); }
+.blk[data-t="dirt"] { background: #8b5a34; }
+.blk[data-t="stone"] { background: #8d8d8d; }
+.blk[data-t="log"] { background: linear-gradient(90deg, #6b4a2a 0 18%, #946a42 18% 50%, #6b4a2a 50% 68%, #946a42 68% 100%); }
+.blk[data-t="coal"], .blk[data-t="diamond"] { background: #8d8d8d; }
+.blk[data-t="coal"]::after, .blk[data-t="diamond"]::after { content: ""; position: absolute; inset: 0; border-radius: 3px; }
+.blk[data-t="coal"]::after {
+  background:
+    radial-gradient(circle at 30% 32%, #262626 0 13%, transparent 13%),
+    radial-gradient(circle at 68% 26%, #262626 0 11%, transparent 11%),
+    radial-gradient(circle at 44% 70%, #262626 0 13%, transparent 13%),
+    radial-gradient(circle at 78% 72%, #262626 0 10%, transparent 10%);
+}
+.blk[data-t="diamond"]::after {
+  background:
+    radial-gradient(circle at 30% 30%, #45ecd8 0 13%, transparent 13%),
+    radial-gradient(circle at 66% 26%, #45ecd8 0 11%, transparent 11%),
+    radial-gradient(circle at 46% 70%, #45ecd8 0 13%, transparent 13%),
+    radial-gradient(circle at 78% 66%, #45ecd8 0 10%, transparent 10%);
+}
+.blk .cr {
+  position: absolute; inset: 0; border-radius: 3px; pointer-events: none; opacity: var(--cro, 0);
+  background-image: repeating-linear-gradient(38deg, rgba(0,0,0,.55) 0 1px, transparent 1px 6px);
+}
+.blk.gone { background: rgba(0,0,0,.1); box-shadow: none; cursor: default; opacity: .45; }
+.blk.gone .cr { opacity: 0; }
+.blk.pop { animation: blkPop .35s ease-out; }
+@keyframes blkPop { 0% { transform: scale(1); } 40% { transform: scale(1.16); } 100% { transform: scale(1); } }
+
+/* ---------- 背包 ---------- */
+.hot { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; }
+.slot {
+  position: relative; aspect-ratio: 1 / 1; border: 2px solid rgba(0,0,0,.18); border-radius: 3px;
+  background: rgba(255,255,255,.35); display: grid; place-items: center;
+}
+.slot .i { width: 60%; height: 60%; border-radius: 2px; display: grid; place-items: center; font-size: 14px; }
+.slot .n { position: absolute; right: 2px; bottom: 1px; font-size: 11px; font-weight: 800; opacity: .85; }
+.it-dirt { background: #8b5a34; }
+.it-stone { background: #9c9c9c; }
+.it-wood { background: #946a42; }
+.it-coal { background: #2b2b2b; }
+.it-diamond { background: #45ecd8; }
+.it-stick { background: #b98a4f; width: 22% !important; height: 52% !important; }
+.it-tool { background: transparent; border: 2px solid var(--c, #8a6238); border-radius: 50%; font-size: 13px; }
+
+/* ---------- 合成 ---------- */
+.recipes { display: flex; flex-direction: column; gap: 8px; }
+.rec {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.1); background: rgba(255,255,255,.4); font-size: 13px;
+}
+.rec.can { border-color: #3c8527; }
+.rec.no { opacity: .52; }
+.rec .i { width: 22px; height: 22px; border-radius: 2px; display: grid; place-items: center; font-size: 13px; flex: 0 0 auto; }
+.rec .name { font-weight: 700; }
+.rec .need { flex: 1 1 auto; opacity: .8; font-size: 12px; }
+.rec button {
+  font: 700 12px/1 inherit; padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(0,0,0,.15); background: #3c8527; color: #fff;
+}
+.rec button:disabled { background: #8a8a8a; cursor: default; }
+.msg { min-height: 20px; margin-top: 8px; font-size: 13px; font-weight: 700; color: #b4460c; }
+.stat { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; opacity: .82; }
+footer { text-align: center; font-size: 12px; opacity: .72; padding: 6px 0 40px; }
+footer a { color: inherit; }
+@media (prefers-color-scheme: dark) {
+  body { background: linear-gradient(180deg, #123b60 0%, #2a5d8b 40%, #4d84b5 100%); color: #eaf6ff; }
+  .panel { background: rgba(8,18,30,.55); border-color: rgba(255,255,255,.14); }
+  .back { background: rgba(255,255,255,.14); color: #eaf6ff; border-color: rgba(255,255,255,.18); }
+  .slot { border-color: rgba(255,255,255,.22); background: rgba(0,0,0,.25); }
+  .rec { border-color: rgba(255,255,255,.14); background: rgba(0,0,0,.22); }
+  .msg { color: #ffb38a; }
+}
+@media (max-width: 520px) {
+  .grid { gap: 5px; }
+  .hot { gap: 4px; }
+  h1 { font-size: 19px; }
+  .rec .need { font-size: 11px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a class="back" href="index.html">← 返回首页</a>
+    <span class="logo">🎮 方块工坊</span>
+  </div>
+
+  <h1>方块工坊</h1>
+  <p class="sub">点方块挖矿 · 攒材料合成 · 换镐子挖得更快 <span>（无限矿区，挖掉会自动刷新）</span></p>
+
+  <div class="panel">
+    <h2>⛏ 矿区 <span class="tagline">钻石矿需要石镐以上才能挖</span></h2>
+    <div class="grid" id="mine"></div>
+    <div class="msg" id="msg"></div>
+    <div class="stat">
+      <span>已挖方块：<b id="s-mined">0</b></span>
+      <span>当前工具：<b id="s-tool">空手</b></span>
+      <span>钻石：<b id="s-dia">0</b></span>
+      <span>木头：<b id="s-wood">0</b></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🎒 背包 <span class="tagline">9 格快捷栏</span></h2>
+    <div class="hot" id="hot"></div>
+  </div>
+
+  <div class="panel">
+    <h2>🛠️ 工作台 <span class="tagline">材料够了就能合成</span></h2>
+    <div class="recipes" id="recs"></div>
+  </div>
+
+  <footer>xiao小小阳 · 用方块搭一个世界 · <a href="works.html">全部作品 →</a>　·　右下角可开背景音乐 🎵</footer>
+</div>
+<script id="game-js">
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- 物品 ---------- */
+  var ITEMS = {
+    dirt:    { name: '泥土', cls: 'it-dirt' },
+    stone:   { name: '石头', cls: 'it-stone' },
+    wood:    { name: '木头', cls: 'it-wood' },
+    coal:    { name: '煤炭', cls: 'it-coal' },
+    diamond: { name: '钻石', cls: 'it-diamond' },
+    stick:   { name: '木棍', cls: 'it-stick' },
+    wpick:   { name: '木镐',  cls: 'it-tool', color: '#a8763e', emoji: '⛏' },
+    spick:   { name: '石镐',  cls: 'it-tool', color: '#c9c9c9', emoji: '⛏' },
+    dpick:   { name: '钻石镐', cls: 'it-tool', color: '#45ecd8', emoji: '⛏' },
+    torch:   { name: '火把',  emoji: '🔥' }
+  };
+  var ORDER = ['dirt', 'stone', 'wood', 'coal', 'diamond', 'stick', 'wpick', 'spick', 'dpick', 'torch'];
+
+  /* ---------- 方块 ---------- */
+  var BLOCKS = {
+    dirt:    { name: '泥土',   hard: 1, drops: { dirt: 1 } },
+    grass:   { name: '草方块', hard: 1, drops: { dirt: 1 } },
+    stone:   { name: '石头',   hard: 2, drops: { stone: 1 } },
+    log:     { name: '木头',   hard: 2, drops: { wood: 1 } },
+    coal:    { name: '煤矿',   hard: 3, drops: { coal: 1 } },
+    diamond: { name: '钻石矿', hard: 4, drops: { diamond: 1 }, need: true }
+  };
+  var POOL = ['dirt', 'dirt', 'grass', 'grass', 'stone', 'stone', 'stone', 'log', 'coal', 'coal', 'diamond'];
+  var TOOL_NAME = { '': '空手', wpick: '木镐', spick: '石镐', dpick: '钻石镐' };
+  var BONUS = { '': 0, wpick: 0, spick: 1, dpick: 2 };
+
+  /* ---------- 配方 ---------- */
+  var RECIPES = [
+    { id: 'stick', need: { wood: 2 },             out: { stick: 4 } },
+    { id: 'wpick', need: { wood: 3, stick: 2 },   out: { wpick: 1 } },
+    { id: 'torch', need: { coal: 1, stick: 1 },   out: { torch: 4 } },
+    { id: 'spick', need: { stone: 3, stick: 2 },  out: { spick: 1 } },
+    { id: 'dpick', need: { diamond: 3, stick: 2 }, out: { dpick: 1 } }
+  ];
+
+  var inv = {};
+  var mined = 0, firstBreak = false;
+
+  /* ---------- 与彩蛋模块对接（存在才用） ---------- */
+  function ach() { if (window.xyAch) window.xyAch.apply(null, arguments); }
+  function sfx(k) { if (window.xySfx && window.xySfx[k]) window.xySfx[k](); }
+  function say(t) {
+    var m = $('msg'); if (!m) return;
+    m.textContent = t;
+    if (say.t) clearTimeout(say.t);
+    say.t = setTimeout(function () { m.textContent = ''; }, 2400);
+  }
+
+  function toolKey() {
+    if (inv.dpick) return 'dpick';
+    if (inv.spick) return 'spick';
+    if (inv.wpick) return 'wpick';
+    return '';
+  }
+  function pick() { return POOL[Math.floor(Math.random() * POOL.length)]; }
+  function itemIcon(k) {
+    var it = ITEMS[k]; if (!it) return '';
+    var st = it.color ? ' style="--c:' + it.color + '"' : '';
+    return '<span class="i ' + (it.cls || '') + '"' + st + '>' + (it.emoji || '') + '</span>';
+  }
+
+  /* ---------- 矿区 ---------- */
+  var COLS = 6, ROWS = 4, TOTAL = COLS * ROWS;
+
+  function makeCell(el, t) {
+    el.className = 'blk';
+    el.setAttribute('data-t', t);
+    el.style.setProperty('--cro', '0');
+    delete el.dataset.hits;
+    el.innerHTML = '<span class="cr"></span>';
+  }
+
+  function respawn(el) {
+    el.classList.remove('gone');
+    makeCell(el, pick());
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+  }
+
+  var mine = $('mine');
+  if (mine) {
+    for (var i = 0; i < TOTAL; i++) {
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'blk';
+      el.setAttribute('aria-label', '方块');
+      makeCell(el, pick());
+      mine.appendChild(el);
+    }
+    mine.addEventListener('click', function (e) {
+      var b = e.target;
+      var cell = (b && b.closest) ? b.closest('.blk') : null;
+      if (cell) hit(cell);
+    });
+  }
+
+  function hit(el) {
+    var t = el.getAttribute('data-t');
+    if (!t || el.classList.contains('gone')) return;
+    var b = BLOCKS[t];
+    if (!b) return;
+    var tk = toolKey();
+
+    if (b.need && tk !== 'spick' && tk !== 'dpick') {
+      sfx('dig');
+      say('✋ 需要石镐以上才能挖' + b.name + '（石头 ×3 + 木棍 ×2）');
+      return;
+    }
+
+    var total = Math.max(1, b.hard - BONUS[tk]);
+    var hits = (parseInt(el.dataset.hits, 10) || 0) + 1;
+
+    if (hits < total) {
+      el.dataset.hits = hits;
+      el.style.setProperty('--cro', String(Math.min(0.8, hits / total * 0.8)));
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+      sfx('dig');
+      return;
+    }
+
+    /* 破坏 */
+    var mul = (t === 'diamond' || t === 'coal') && tk === 'dpick' ? 2 : 1;
+    for (var k in b.drops) {
+      if (b.drops.hasOwnProperty(k)) inv[k] = (inv[k] || 0) + b.drops[k] * mul;
+    }
+    mined++;
+    sfx('pop');
+    if (!firstBreak) {
+      firstBreak = true;
+      ach('firstmine', '矿工入门 —— 挖到了第一块方块', '⛏️');
+    }
+    if (t === 'diamond') ach('diamond', '钻石！—— 挖到了第一颗钻石', '💎');
+    if (mined === 30) ach('miner', '老矿工 —— 累计挖了 30 个方块', '🪨');
+    if (mul === 2) say('💎 钻石镐：矿石双倍掉落 ×2');
+    el.classList.add('gone');
+    el.innerHTML = '';
+    render();
+    setTimeout(function () { respawn(el); }, 1500 + Math.random() * 900);
+  }
+
+  /* ---------- 渲染 ---------- */
+  function render() {
+    var keys = [];
+    for (var i = 0; i < ORDER.length; i++) { if (inv[ORDER[i]]) keys.push(ORDER[i]); }
+    var html = '';
+    for (var s = 0; s < 9; s++) {
+      var k = keys[s];
+      html += '<div class="slot">' + (k ? itemIcon(k) + '<span class="n">' + inv[k] + '</span>' : '') + '</div>';
+    }
+    if ($('hot')) $('hot').innerHTML = html;
+
+    if ($('s-mined')) $('s-mined').textContent = mined;
+    if ($('s-dia')) $('s-dia').textContent = inv.diamond || 0;
+    if ($('s-wood')) $('s-wood').textContent = inv.wood || 0;
+    if ($('s-tool')) $('s-tool').textContent = TOOL_NAME[toolKey()];
+
+    var rh = '';
+    for (var j = 0; j < RECIPES.length; j++) {
+      var r = RECIPES[j], can = true, needTxt = [], outTxt = [], firstOut = '';
+      for (var nk in r.need) {
+        if (!r.need.hasOwnProperty(nk)) continue;
+        var have = inv[nk] || 0;
+        needTxt.push((ITEMS[nk] ? ITEMS[nk].name : nk) + ' ' + have + '/' + r.need[nk]);
+        if (have < r.need[nk]) can = false;
+      }
+      for (var ok in r.out) {
+        if (!r.out.hasOwnProperty(ok)) continue;
+        if (!firstOut) firstOut = ok;
+        outTxt.push((ITEMS[ok] ? ITEMS[ok].name : ok) + ' ×' + r.out[ok]);
+      }
+      rh += '<div class="rec ' + (can ? 'can' : 'no') + '">' + itemIcon(firstOut) +
+        '<span class="name">' + outTxt.join(' + ') + '</span>' +
+        '<span class="need">' + needTxt.join(' · ') + '</span>' +
+        '<button type="button" data-r="' + r.id + '"' + (can ? '' : ' disabled') + '>合成</button></div>';
+    }
+    if ($('recs')) $('recs').innerHTML = rh;
+  }
+
+  var recs = $('recs');
+  if (recs) {
+    recs.addEventListener('click', function (e) {
+      var b = e.target;
+      var btn = (b && b.closest) ? b.closest('button[data-r]') : null;
+      if (!btn) return;
+      var id = btn.getAttribute('data-r'), r = null, i;
+      for (i = 0; i < RECIPES.length; i++) { if (RECIPES[i].id === id) r = RECIPES[i]; }
+      if (!r) return;
+      var k;
+      for (k in r.need) {
+        if (r.need.hasOwnProperty(k) && (inv[k] || 0) < r.need[k]) { say('材料不够'); return; }
+      }
+      for (k in r.need) {
+        if (!r.need.hasOwnProperty(k)) continue;
+        inv[k] -= r.need[k];
+        if (inv[k] <= 0) delete inv[k];
+      }
+      var names = [];
+      for (k in r.out) {
+        if (!r.out.hasOwnProperty(k)) continue;
+        inv[k] = (inv[k] || 0) + r.out[k];
+        names.push(ITEMS[k].name + ' ×' + r.out[k]);
+      }
+      sfx('pop');
+      say('✅ 合成了 ' + names.join(' + '));
+      ach('craft', '工匠 —— 第一次在工作台合成', '🛠️');
+      if (inv.dpick) ach('diamondpick', '钻石装备 —— 合出了钻石镐', '💎');
+      render();
+    });
+  }
+
+  render();
+  setTimeout(function () { ach('game', '工头 —— 进入了方块工坊', '🎮'); }, 1400);
+  try { console.log('%c方块工坊：点方块挖矿，攒材料合成镐子', 'color:#7fd1ff'); } catch (e) {}
+})();
+</script>
+<!-- FUN-EGG-START -->
+<style>
+#egg-hint{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:61;max-width:92vw;
+  padding:5px 12px;border-radius:999px;background:rgba(12,20,30,.42);color:#eaf6ff;
+  font:12px/1.4 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;letter-spacing:.3px;
+  cursor:pointer;user-select:none;opacity:.5;transition:opacity .35s,background .35s;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#egg-hint:hover,#egg-hint:active{opacity:1;background:rgba(12,20,30,.75)}
+#egg-ach-wrap{position:fixed;right:14px;top:14px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.egg-ach{display:flex;align-items:center;gap:10px;min-width:210px;padding:9px 13px;
+  background:rgba(24,24,24,.92);border:2px solid #4a4a4a;border-radius:3px;color:#fff;
+  font:13px/1.35 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,255,255,.05);
+  opacity:0;transform:translateX(130%);transition:opacity .25s ease,transform .4s cubic-bezier(.2,.9,.3,1.25)}
+.egg-ach.in{opacity:1;transform:none}
+.egg-ach .ic{flex:0 0 auto;width:32px;height:32px;display:grid;place-items:center;font-size:19px;
+  background:#2c2c2c;border:2px solid #555;border-radius:2px}
+.egg-ach .t{color:#fcfc54;font-weight:700}
+.egg-ach .n{color:#eceaea}
+#egg-f3{position:fixed;left:8px;top:8px;z-index:9997;pointer-events:none;max-width:94vw;
+  padding:6px 9px;border-radius:2px;background:rgba(0,0,0,.45);color:#fff;
+  font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+  text-shadow:1px 1px 0 rgba(0,0,0,.6);word-break:break-word}
+.egg-tip{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9999;
+  padding:10px 16px;background:rgba(24,24,24,.92);border:2px solid #4a4a4a;border-radius:3px;
+  color:#fcfc54;font:600 15px ui-monospace,Menlo,Consolas,monospace;pointer-events:none;
+  animation:eggTip .3s ease-out}
+@keyframes eggTip{from{opacity:0;transform:translate(-50%,-50%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%)}}
+.egg-bit{position:fixed;width:6px;height:6px;margin:-3px 0 0 -3px;pointer-events:none;z-index:9998;
+  border-radius:1px;animation:eggBitAnim .85s ease-out forwards}
+@keyframes eggBitAnim{0%{transform:translate(0,0) scale(1);opacity:1}
+  100%{transform:translate(var(--dx,0),var(--dy,20px)) scale(.4);opacity:0}}
+.egg-gem{position:fixed;top:-6vh;font-size:22px;line-height:1;pointer-events:none;z-index:9996;
+  animation:eggGemAnim linear forwards}
+@keyframes eggGemAnim{0%{transform:translateY(0) rotate(0deg);opacity:0}
+  10%{opacity:1}100%{transform:translateY(112vh) rotate(220deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
+@media (max-width:520px){.egg-ach{min-width:0;max-width:78vw}}
+</style>
+<div id="egg-hint" role="button" tabindex="0">🍀 彩蛋：点这里看调试信息 · 试试 ↑↑↓↓←→←→BA</div>
+<div id="egg-ach-wrap" aria-live="polite"></div>
+<div id="egg-f3" hidden></div>
+<script>
+(function () {
+  var reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  /* ---------- 音效：全部 WebAudio 合成，零外部文件 ---------- */
+  var AC = null;
+  function ac() {
+    if (AC) return AC;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    try { AC = new C(); } catch (e) { AC = null; }
+    return AC;
+  }
+  function noise(dur, freq, q, vol) {
+    var c = ac(); if (!c) return;
+    var n = Math.max(1, Math.floor(c.sampleRate * dur));
+    var b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var s = c.createBufferSource(); s.buffer = b;
+    var f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    var g = c.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+  }
+  function tone(freq, delay, dur, vol, type) {
+    var c = ac(); if (!c) return;
+    var t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'triangle'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.06);
+  }
+  function sfxDig() { noise(0.12, 620, 1.1, 0.14); }
+  function sfxGet() { tone(784, 0, 0.22, 0.1, 'triangle'); tone(1175, 0.1, 0.3, 0.1, 'triangle'); }
+  function sfxGem() { tone(1568, 0, 0.1, 0.08, 'square'); }
+
+  /* ---------- 成就弹窗 ---------- */
+  var STORE = 'xy_eggs_v1', got = {};
+  try { got = JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch (e) { got = {}; }
+  var wrap = document.getElementById('egg-ach-wrap');
+
+  function ach(id, name, icon) {
+    if (got[id] || !wrap) return;
+    got[id] = 1;
+    try { localStorage.setItem(STORE, JSON.stringify(got)); } catch (e) {}
+    if (AC) sfxGet();
+    var d = document.createElement('div');
+    d.className = 'egg-ach';
+    var ic = document.createElement('span'); ic.className = 'ic'; ic.textContent = icon;
+    var tx = document.createElement('span');
+    var t1 = document.createElement('span'); t1.className = 't'; t1.textContent = '成就达成！';
+    var t2 = document.createElement('span'); t2.className = 'n'; t2.textContent = name;
+    tx.appendChild(t1); tx.appendChild(document.createElement('br')); tx.appendChild(t2);
+    d.appendChild(ic); d.appendChild(tx);
+    wrap.appendChild(d);
+    requestAnimationFrame(function () { d.className = 'egg-ach in'; });
+    setTimeout(function () {
+      d.className = 'egg-ach';
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 520);
+    }, 4200);
+  }
+
+  /* ---------- 挖方块：粒子 + 音效 ---------- */
+  var COLORS = ['#7cbf5a', '#5d9a3d', '#8b5a34', '#a9713f'];
+  function gone(el, ms) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, ms); }
+  function digFx(x, y) {
+    if (reduce) return;
+    for (var i = 0; i < 8; i++) {
+      var p = document.createElement('i');
+      p.className = 'egg-bit';
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      var a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 28;
+      p.style.setProperty('--dx', (Math.cos(a) * r).toFixed(1) + 'px');
+      p.style.setProperty('--dy', (Math.sin(a) * r + 16).toFixed(1) + 'px');
+      p.style.background = COLORS[i % COLORS.length];
+      document.body.appendChild(p);
+      gone(p, 950);
+    }
+  }
+
+  /* ---------- 钻石雨 ---------- */
+  var GEMS = ['💎', '💎', '⭐', '🟩'];
+  function gemRain() {
+    if (AC) sfxGem();
+    if (reduce) return;
+    for (var i = 0; i < 34; i++) {
+      var s = document.createElement('div');
+      s.className = 'egg-gem';
+      s.textContent = GEMS[Math.floor(Math.random() * GEMS.length)];
+      s.style.left = (Math.random() * 98).toFixed(1) + 'vw';
+      s.style.animationDelay = (Math.random() * 1.4).toFixed(2) + 's';
+      s.style.animationDuration = (2.2 + Math.random() * 1.8).toFixed(2) + 's';
+      document.body.appendChild(s);
+      gone(s, 5800);
+    }
+  }
+
+  /* ---------- F3 调试屏 ---------- */
+  var f3 = document.getElementById('egg-f3');
+  var f3on = false, rafId = 0, frames = 0, lastT = 0, fps = 0, mx = 0;
+
+  function lines() {
+    var px = mx / 4, py = 64 + Math.sin(Date.now() / 4000) * 8, pz = -window.pageYOffset / 8;
+    var day = Math.floor(Date.now() / 86400000) % 365 + 1;
+    return [
+      '<b>xiao小小阳</b> · Minecraft 1.20.1 (Java Edition)',
+      'FPS: ' + (fps || '--'),
+      'XYZ: ' + px.toFixed(1) + ' / ' + py.toFixed(1) + ' / ' + pz.toFixed(1),
+      'Block: ' + Math.floor(px) + ' ' + Math.floor(py) + ' ' + Math.floor(pz),
+      'Biome: minecraft:plains',
+      'Light: 15 (15 sky, 0 block)',
+      'Day: ' + day + ' · ' + new Date().toTimeString().slice(0, 8),
+      'Dimension: minecraft:overworld',
+      'Local Difficulty: ' + (1 + (Date.now() % 100) / 100).toFixed(2),
+      'Loaded Chunks: ' + document.querySelectorAll('*').length,
+      'Entities: ' + document.querySelectorAll('.egg-gem').length + ' · Screen: ' + window.innerWidth + 'x' + window.innerHeight
+    ].join('<br>');
+  }
+  function loop(t) {
+    if (!f3on) { rafId = 0; return; }
+    rafId = requestAnimationFrame(loop);
+    frames++;
+    if (lastT && t - lastT >= 500) { fps = Math.round(frames * 1000 / (t - lastT)); frames = 0; lastT = t; }
+    if (f3) f3.innerHTML = lines();
+  }
+  function setF3(on) {
+    if (!f3) return;
+    f3on = (typeof on === 'boolean') ? on : !f3on;
+    if (f3on) {
+      f3.hidden = false; frames = 0; lastT = 0;
+      if (!rafId) rafId = requestAnimationFrame(loop);
+      ach('debug', '调试大师 —— 打开了 F3', '🔍');
+    } else {
+      f3.hidden = true;
+    }
+  }
+
+  /* ---------- Konami 秘籍 ---------- */
+  var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  var kpos = 0;
+  function creative() {
+    ach('creative', '创造模式 —— 你输对了秘籍', '💎');
+    gemRain();
+    if (reduce) return;
+    var tip = document.createElement('div');
+    tip.className = 'egg-tip';
+    tip.textContent = '/gamemode creative';
+    document.body.appendChild(tip);
+    gone(tip, 1700);
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'F3') { e.preventDefault(); setF3(); return; }
+    var k = (e.key && e.key.length === 1) ? e.key.toLowerCase() : e.key;
+    if (k === KONAMI[kpos]) {
+      kpos++;
+      if (kpos === KONAMI.length) { kpos = 0; creative(); }
+    } else {
+      kpos = (k === KONAMI[0]) ? 1 : 0;
+    }
+  });
+
+  /* ---------- 交互：点击挖方块 / 点开作品 ---------- */
+  var clicks = 0;
+  document.addEventListener('mousemove', function (e) { mx = e.clientX; }, { passive: true });
+  document.addEventListener('touchstart', function () {
+    var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+  }, { passive: true });
+  document.addEventListener('click', function (e) {
+    var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+    var t = e.target;
+    if (t && t.closest && t.closest('a,button,#egg-hint,#egg-mus,.egg-ach')) {
+      if (t.closest('a,button,[data-bvid],.card,.work-card')) ach('play', '鉴赏家 —— 点开了作品', '📺');
+      return;
+    }
+    sfxDig();
+    digFx(e.clientX, e.clientY);
+    clicks++;
+    if (clicks === 15) ach('dig', '破坏方块达人 —— 连挖 15 下', '⛏️');
+  }, true);
+
+  /* ---------- 首次见面 + 翻到作品区 ---------- */
+  setTimeout(function () { ach('first', '初次见面 —— 欢迎来到方块世界', '🟩'); }, 2200);
+  (function watchWorks() {
+    var el = document.getElementById('works') || document.querySelector('section');
+    if (!el) return;
+    var fired = false;
+    function check() {
+      if (fired) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < (window.innerHeight || 0) * 0.85) {
+        fired = true;
+        ach('works', '旅行者 —— 翻到了作品区', '🗺️');
+        window.removeEventListener('scroll', check);
+      }
+    }
+    window.addEventListener('scroll', check, { passive: true });
+    setTimeout(check, 800);
+  })();
+
+  /* ---------- 提示条 ---------- */
+  var hint = document.getElementById('egg-hint');
+  if (hint) {
+    hint.addEventListener('click', function () { setF3(); });
+    hint.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setF3(); }
+    });
+    setTimeout(function () { hint.style.opacity = '.24'; }, 15000);
+  }
+
+  window.xyAch = ach;
+  window.xySfx = { dig: sfxDig, get: sfxGet, gem: sfxGem, pop: function () { tone(1046, 0, 0.12, 0.1, 'square'); } };
+  window.xyAC = ac;
+  try {
+    console.log('%c⛏ xiao小小阳 · 方块世界', 'background:#3c8527;color:#fff;padding:4px 8px;font-weight:700');
+    console.log('%c彩蛋：↑↑↓↓←→←→BA  或按 F3', 'color:#fcfc54');
+    console.log('%c/execute as @s run say 你好，冒险者', 'color:#7fd1ff');
+  } catch (e) {}
+})();
+</script>
+<!-- FUN-EGG-END -->
+<!-- FUN-MUSIC-START -->
+<style>
+#egg-mus{position:fixed;right:14px;bottom:14px;z-index:62;width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;font-size:18px;line-height:1;cursor:pointer;user-select:none;
+  border:2px solid rgba(255,255,255,.35);background:rgba(12,20,30,.5);color:#eaf6ff;
+  opacity:.62;transition:opacity .3s,transform .25s,background .3s,border-color .3s;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#egg-mus:hover,#egg-mus:active{opacity:1;transform:scale(1.07)}
+#egg-mus.on{opacity:1;border-color:#8ef07a;color:#c8ffc0;background:rgba(12,20,30,.8)}
+#egg-mus.tip::after{content:"点我听背景音乐";position:absolute;right:52px;top:50%;transform:translateY(-50%);
+  white-space:nowrap;font-size:11px;padding:4px 9px;border-radius:999px;color:#eaf6ff;
+  background:rgba(12,20,30,.72);opacity:0;animation:musTip 6s ease-out 2.5s 1 forwards}
+@keyframes musTip{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@media (max-width:520px){#egg-mus{width:40px;height:40px}}
+@media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
+</style>
+<span id="egg-mus" role="button" tabindex="0" title="背景音乐（C418 风格，点击开/关）" aria-label="背景音乐">🔇</span>
+<script>
+(function () {
+  var btn = document.getElementById('egg-mus');
+  var MUS = { on: false, timer: 0, master: null, gate: null, conv: null };
+  /* A 小调五声音阶 —— C418 那种稀疏、随机的钢琴感 */
+  var SCALE = [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
+
+  function ac() { return window.xyAC ? window.xyAC() : null; }
+
+  function build() {
+    var c = ac(); if (!c) return null;
+    if (MUS.gate) return c;
+    var master = c.createGain();
+    master.gain.value = 0.0;
+    master.connect(c.destination);
+    /* 用噪声脉冲响应做一个廉价混响，营造洞穴空间感 */
+    var conv = c.createConvolver();
+    var len = Math.floor(c.sampleRate * 2.8);
+    var imp = c.createBuffer(2, len, c.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = imp.getChannelData(ch);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.8);
+    }
+    conv.buffer = imp;
+    var wet = c.createGain(); wet.gain.value = 0.5;
+    var gate = c.createGain(); gate.gain.value = 1;
+    gate.connect(master);
+    gate.connect(conv); conv.connect(wet); wet.connect(master);
+    MUS.gate = gate; MUS.master = master; MUS.conv = conv;
+    return c;
+  }
+
+  function note(freq, delay, dur, vol) {
+    var c = ac(); if (!c || !MUS.gate) return;
+    var t = c.currentTime + delay;
+    var o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
+    var o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2.005;
+    var g = c.createGain(), g2 = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(vol * 0.22, t + 0.01);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.55);
+    o.connect(g); o2.connect(g2); g.connect(MUS.gate); g2.connect(MUS.gate);
+    o.start(t); o.stop(t + dur + 0.1); o2.start(t); o2.stop(t + dur * 0.6 + 0.1);
+  }
+
+  function step() {
+    if (!MUS.on) return;
+    if (Math.random() < 0.18) note(SCALE[Math.floor(Math.random() * 3)] / 2, 0, 4.5, 0.05);
+    note(SCALE[Math.floor(Math.random() * SCALE.length)], 0, 2.4 + Math.random() * 1.6, 0.075);
+    if (Math.random() < 0.35) note(SCALE[Math.floor(Math.random() * SCALE.length)], 0.9, 1.8, 0.05);
+    MUS.timer = setTimeout(step, 2200 + Math.random() * 4200);
+  }
+
+  function paint() {
+    if (!btn) return;
+    btn.textContent = MUS.on ? '🎵' : '🔇';
+    btn.className = MUS.on ? 'on' : '';
+    btn.setAttribute('title', MUS.on ? '背景音乐：开（点击关闭）' : '背景音乐：关（点击开启）');
+  }
+
+  function toggle(on) {
+    var c = ac(); if (!c) return false;
+    if (!MUS.gate && !build()) return false;
+    if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+    MUS.on = (typeof on === 'boolean') ? on : !MUS.on;
+    try {
+      MUS.master.gain.cancelScheduledValues(c.currentTime);
+      MUS.master.gain.setTargetAtTime(MUS.on ? 0.9 : 0.0, c.currentTime, 0.7);
+    } catch (e) {}
+    if (MUS.on) {
+      if (window.xyAch) window.xyAch('musician', '音乐家 —— 打开了背景音乐', '🎵');
+      if (!MUS.timer) step();
+    } else {
+      clearTimeout(MUS.timer); MUS.timer = 0;
+    }
+    try { localStorage.setItem('xy_music', MUS.on ? '1' : '0'); } catch (e) {}
+    paint();
+    return MUS.on;
+  }
+
+  if (btn) {
+    if (localStorage.getItem('xy_music') === '0') { /* 上次关着，保持默认 */ }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+    var silent = false;
+    try { silent = localStorage.getItem('xy_music') === '0'; } catch (e) {}
+    if (!silent) {
+      btn.className = 'tip';
+      setTimeout(function () { if (!MUS.on) btn.className = ''; }, 9000);
+    }
+  }
+
+  /* 上次开着的话，用户第一次交互时自动续上 */
+  var want = false;
+  try { want = localStorage.getItem('xy_music') === '1'; } catch (e) {}
+  if (want) {
+    var kick = function (e) {
+      if (e && e.target === btn) return;
+      if (toggle(true)) {
+        document.removeEventListener('click', kick, true);
+        document.removeEventListener('touchstart', kick, true);
+      }
+    };
+    document.addEventListener('click', kick, true);
+    document.addEventListener('touchstart', kick, true);
+  }
+
+  window.xyMusic = { toggle: toggle, on: function () { return MUS.on; } };
+})();
+</script>
+<!-- FUN-MUSIC-END -->
+</body>
+</html>
