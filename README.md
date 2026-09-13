@@ -2,6 +2,7 @@
 
 首页：<https://huoxingrnana.github.io/xiaoyang/>
 全部作品：<https://huoxingrnana.github.io/xiaoyang/works.html>
+方块工坊（小游戏）：<https://huoxingrnana.github.io/xiaoyang/game.html>
 
 Minecraft 动画 UP 主「xiao小小阳」的个人主页，纯静态站点，由 GitHub Pages 托管（源：`main` 分支根目录）。
 
