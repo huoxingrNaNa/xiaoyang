@@ -1028,6 +1028,8 @@
   
     <div class="works-more">
       <a class="mc-btn green" href="works.html">查看全部 <span data-stat="videos">12</span> 个作品 →</a>
+      <!-- GAME-LINK -->
+      <a class="mc-btn green" href="game.html" style="margin-top:12px">🎮 玩个小游戏 · 方块工坊 →</a>
     </div>
   </section>
 
@@ -1509,7 +1511,7 @@
   document.addEventListener('click', function (e) {
     var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
     var t = e.target;
-    if (t && t.closest && t.closest('a,button,#egg-hint,.egg-ach')) {
+    if (t && t.closest && t.closest('a,button,#egg-hint,#egg-mus,.egg-ach')) {
       if (t.closest('a,button,[data-bvid],.card,.work-card')) ach('play', '鉴赏家 —— 点开了作品', '📺');
       return;
     }
@@ -1548,6 +1550,9 @@
     setTimeout(function () { hint.style.opacity = '.24'; }, 15000);
   }
 
+  window.xyAch = ach;
+  window.xySfx = { dig: sfxDig, get: sfxGet, gem: sfxGem, pop: function () { tone(1046, 0, 0.12, 0.1, 'square'); } };
+  window.xyAC = ac;
   try {
     console.log('%c⛏ xiao小小阳 · 方块世界', 'background:#3c8527;color:#fff;padding:4px 8px;font-weight:700');
     console.log('%c彩蛋：↑↑↓↓←→←→BA  或按 F3', 'color:#fcfc54');
@@ -1556,5 +1561,138 @@
 })();
 </script>
 <!-- FUN-EGG-END -->
+<!-- FUN-MUSIC-START -->
+<style>
+#egg-mus{position:fixed;right:14px;bottom:14px;z-index:62;width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;font-size:18px;line-height:1;cursor:pointer;user-select:none;
+  border:2px solid rgba(255,255,255,.35);background:rgba(12,20,30,.5);color:#eaf6ff;
+  opacity:.62;transition:opacity .3s,transform .25s,background .3s,border-color .3s;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#egg-mus:hover,#egg-mus:active{opacity:1;transform:scale(1.07)}
+#egg-mus.on{opacity:1;border-color:#8ef07a;color:#c8ffc0;background:rgba(12,20,30,.8)}
+#egg-mus.tip::after{content:"点我听背景音乐";position:absolute;right:52px;top:50%;transform:translateY(-50%);
+  white-space:nowrap;font-size:11px;padding:4px 9px;border-radius:999px;color:#eaf6ff;
+  background:rgba(12,20,30,.72);opacity:0;animation:musTip 6s ease-out 2.5s 1 forwards}
+@keyframes musTip{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@media (max-width:520px){#egg-mus{width:40px;height:40px}}
+@media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
+</style>
+<span id="egg-mus" role="button" tabindex="0" title="背景音乐（C418 风格，点击开/关）" aria-label="背景音乐">🔇</span>
+<script>
+(function () {
+  var btn = document.getElementById('egg-mus');
+  var MUS = { on: false, timer: 0, master: null, gate: null, conv: null };
+  /* A 小调五声音阶 —— C418 那种稀疏、随机的钢琴感 */
+  var SCALE = [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
+
+  function ac() { return window.xyAC ? window.xyAC() : null; }
+
+  function build() {
+    var c = ac(); if (!c) return null;
+    if (MUS.gate) return c;
+    var master = c.createGain();
+    master.gain.value = 0.0;
+    master.connect(c.destination);
+    /* 用噪声脉冲响应做一个廉价混响，营造洞穴空间感 */
+    var conv = c.createConvolver();
+    var len = Math.floor(c.sampleRate * 2.8);
+    var imp = c.createBuffer(2, len, c.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = imp.getChannelData(ch);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.8);
+    }
+    conv.buffer = imp;
+    var wet = c.createGain(); wet.gain.value = 0.5;
+    var gate = c.createGain(); gate.gain.value = 1;
+    gate.connect(master);
+    gate.connect(conv); conv.connect(wet); wet.connect(master);
+    MUS.gate = gate; MUS.master = master; MUS.conv = conv;
+    return c;
+  }
+
+  function note(freq, delay, dur, vol) {
+    var c = ac(); if (!c || !MUS.gate) return;
+    var t = c.currentTime + delay;
+    var o = c.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
+    var o2 = c.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2.005;
+    var g = c.createGain(), g2 = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(vol * 0.22, t + 0.01);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.55);
+    o.connect(g); o2.connect(g2); g.connect(MUS.gate); g2.connect(MUS.gate);
+    o.start(t); o.stop(t + dur + 0.1); o2.start(t); o2.stop(t + dur * 0.6 + 0.1);
+  }
+
+  function step() {
+    if (!MUS.on) return;
+    if (Math.random() < 0.18) note(SCALE[Math.floor(Math.random() * 3)] / 2, 0, 4.5, 0.05);
+    note(SCALE[Math.floor(Math.random() * SCALE.length)], 0, 2.4 + Math.random() * 1.6, 0.075);
+    if (Math.random() < 0.35) note(SCALE[Math.floor(Math.random() * SCALE.length)], 0.9, 1.8, 0.05);
+    MUS.timer = setTimeout(step, 2200 + Math.random() * 4200);
+  }
+
+  function paint() {
+    if (!btn) return;
+    btn.textContent = MUS.on ? '🎵' : '🔇';
+    btn.className = MUS.on ? 'on' : '';
+    btn.setAttribute('title', MUS.on ? '背景音乐：开（点击关闭）' : '背景音乐：关（点击开启）');
+  }
+
+  function toggle(on) {
+    var c = ac(); if (!c) return false;
+    if (!MUS.gate && !build()) return false;
+    if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+    MUS.on = (typeof on === 'boolean') ? on : !MUS.on;
+    try {
+      MUS.master.gain.cancelScheduledValues(c.currentTime);
+      MUS.master.gain.setTargetAtTime(MUS.on ? 0.9 : 0.0, c.currentTime, 0.7);
+    } catch (e) {}
+    if (MUS.on) {
+      if (window.xyAch) window.xyAch('musician', '音乐家 —— 打开了背景音乐', '🎵');
+      if (!MUS.timer) step();
+    } else {
+      clearTimeout(MUS.timer); MUS.timer = 0;
+    }
+    try { localStorage.setItem('xy_music', MUS.on ? '1' : '0'); } catch (e) {}
+    paint();
+    return MUS.on;
+  }
+
+  if (btn) {
+    if (localStorage.getItem('xy_music') === '0') { /* 上次关着，保持默认 */ }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+    var silent = false;
+    try { silent = localStorage.getItem('xy_music') === '0'; } catch (e) {}
+    if (!silent) {
+      btn.className = 'tip';
+      setTimeout(function () { if (!MUS.on) btn.className = ''; }, 9000);
+    }
+  }
+
+  /* 上次开着的话，用户第一次交互时自动续上 */
+  var want = false;
+  try { want = localStorage.getItem('xy_music') === '1'; } catch (e) {}
+  if (want) {
+    var kick = function (e) {
+      if (e && e.target === btn) return;
+      if (toggle(true)) {
+        document.removeEventListener('click', kick, true);
+        document.removeEventListener('touchstart', kick, true);
+      }
+    };
+    document.addEventListener('click', kick, true);
+    document.addEventListener('touchstart', kick, true);
+  }
+
+  window.xyMusic = { toggle: toggle, on: function () { return MUS.on; } };
+})();
+</script>
+<!-- FUN-MUSIC-END -->
 </body>
 </html>
