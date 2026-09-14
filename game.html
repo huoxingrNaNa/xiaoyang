@@ -392,7 +392,7 @@ footer a { color: inherit; }
 </script>
 <!-- FUN-EGG-START -->
 <style>
-#egg-hint{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:61;max-width:92vw;
+#egg-hint{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:61;max-width:calc(100vw - 210px);
   padding:5px 12px;border-radius:999px;background:rgba(12,20,30,.42);color:#eaf6ff;
   font:12px/1.4 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;letter-spacing:.3px;
   cursor:pointer;user-select:none;opacity:.5;transition:opacity .35s,background .35s;
@@ -786,5 +786,76 @@ footer a { color: inherit; }
 })();
 </script>
 <!-- FUN-MUSIC-END -->
+<!-- FUN-STATS-START -->
+<style>
+#egg-stats{position:fixed;left:14px;bottom:14px;z-index:61;display:flex;align-items:center;gap:8px;
+  padding:5px 11px;border-radius:999px;background:rgba(12,20,30,.45);color:#eaf6ff;
+  font:12px/1.35 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  opacity:.55;transition:opacity .35s,background .35s;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  max-width:72vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#egg-stats:hover{opacity:1;background:rgba(12,20,30,.78)}
+#egg-stats b{color:#8ef07a;font-weight:800}
+#egg-stats .sep{opacity:.35}
+#egg-stats[hidden]{display:none}
+@media (max-width:520px){#egg-stats{font-size:11px;padding:4px 9px;gap:6px;max-width:66vw}}
+</style>
+<span id="egg-stats" hidden title="本站访问统计（只记数字，不收集任何个人信息）"><span>👀 浏览 <b id="egg-pv">–</b></span><span class="sep">|</span><span>🧍 访客 <b id="egg-uv">–</b></span></span>
+<script>
+(function () {
+  var API = 'https://abacus.jasoncameron.dev/';
+  var NS = 'xiaoyang-site/', PVK = 'hits', UVK = 'visitors';
+  var box = document.getElementById('egg-stats');
+  var pvEl = document.getElementById('egg-pv'), uvEl = document.getElementById('egg-uv');
+  if (!box || !pvEl || !uvEl) return;
+
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function cache(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function cached(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function ask(path, ms) {
+    if (!window.fetch) return Promise.reject(new Error('no fetch'));
+    var ctl = window.AbortController ? new AbortController() : null;
+    var t = setTimeout(function () { if (ctl) ctl.abort(); }, ms || 5000);
+    return fetch(API + path, { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { clearTimeout(t); return j; })
+      .catch(function (e) { clearTimeout(t); throw e; });
+  }
+
+  /* 先亮出上次缓存值，避免空白或闪烁 */
+  var cpv = cached('xy_pv'), cuv = cached('xy_uv');
+  if (cpv || cuv) {
+    pvEl.textContent = cpv ? fmt(cpv) : '–';
+    uvEl.textContent = cuv ? fmt(cuv) : '–';
+    box.hidden = false;
+  }
+
+  var first = false;
+  try { first = !localStorage.getItem('xy_seen'); } catch (e) { first = false; }
+
+  var jobs = [ask('hit/' + NS + PVK).then(function (j) {
+    if (j && typeof j.value === 'number') { pvEl.textContent = fmt(j.value); cache('xy_pv', j.value); }
+  })];
+
+  if (first) {
+    jobs.push(ask('hit/' + NS + UVK).then(function (j) {
+      if (j && typeof j.value === 'number') { uvEl.textContent = fmt(j.value); cache('xy_uv', j.value); }
+      try { localStorage.setItem('xy_seen', '1'); } catch (e) {}
+    }));
+  } else {
+    jobs.push(ask('get/' + NS + UVK).then(function (j) {
+      if (j && typeof j.value === 'number') { uvEl.textContent = fmt(j.value); cache('xy_uv', j.value); }
+    }));
+  }
+
+  Promise.all(jobs).then(function () {
+    box.hidden = false;
+    box.setAttribute('title', '本站累计浏览 ' + pvEl.textContent + ' 次 · 独立访客 ' + uvEl.textContent + ' 位（只记数字，不收集任何个人信息）');
+  }).catch(function () {
+    if (!cpv && !cuv) box.hidden = true; /* 拉不到就隐藏，不破坏页面 */
+  });
+})();
+</script>
+<!-- FUN-STATS-END -->
 </body>
 </html>
