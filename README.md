@@ -42,3 +42,7 @@ python3 refresh.py    # 自动拉 B 站数据刷新两页（视频、粉丝、�
 | `og.jpg` | 分享大图（1200 x 630，微信 / QQ / B 站分享预览用） |
 | `upload.py` | 部署脚本（GitHub Contents API，自动跟随仓库改名） |
 | `refresh.py` | 数据自动更新脚本 |
+
+## 🛠 站点源码（tools/）
+
+页面里的彩蛋、背景音乐、访问统计、PWA、作品热度榜，全部由 `tools/` 下的模块模板 + 注入脚本生成；根目录的 HTML 是**生成物**，请勿直接手改。重建 / 部署 / 统计脚本与踩坑记录见 [tools/README.md](tools/README.md)。
