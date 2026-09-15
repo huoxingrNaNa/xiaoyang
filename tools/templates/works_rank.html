@@ -1,0 +1,67 @@
+<!-- WORKS-RANK-START -->
+<style>
+#hot-rank{margin:0 0 22px;padding:14px 16px;border:2px solid rgba(0,0,0,.12);border-radius:14px;
+  background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#hot-rank h3{font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+#hot-rank h3 span{font-size:11px;font-weight:400;opacity:.6}
+#hot-rank .row{display:flex;align-items:center;gap:9px;padding:5px 0;text-decoration:none;color:inherit;font-size:12.5px}
+#hot-rank .row:hover .nm{text-decoration:underline}
+#hot-rank .rk{flex:0 0 auto;width:22px;text-align:center;font-size:14px}
+#hot-rank .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+#hot-rank .bar{flex:0 0 84px;height:9px;border-radius:5px;background:rgba(0,0,0,.1);overflow:hidden}
+#hot-rank .bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#3c8527,#7cbd4b)}
+#hot-rank .vv{flex:0 0 auto;width:46px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.vbar{display:block;height:5px;margin-top:6px;border-radius:3px;background:rgba(0,0,0,.1);overflow:hidden}
+.vbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#3c8527,#7cbd4b)}
+@media (prefers-color-scheme:dark){
+  #hot-rank{background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.14)}
+  #hot-rank .bar,.vbar{background:rgba(255,255,255,.12)}
+  #hot-rank .bar i,.vbar i{background:linear-gradient(90deg,#5aa63f,#a8e57d)}
+}
+@media (max-width:520px){#hot-rank .bar{flex:0 0 56px}}
+</style>
+<script>
+(function () {
+  var dataEl = document.getElementById('video-data');
+  var grid = document.getElementById('video-grid');
+  if (!dataEl || !grid) return;
+  var v = [];
+  try { v = JSON.parse(dataEl.textContent) || []; } catch (e) { return; }
+  if (v.length < 2) return;
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  var max = 0, i;
+  for (i = 0; i < v.length; i++) max = Math.max(max, v[i].play || 0);
+  if (!max) return;
+
+  var medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+  var top = v.slice().sort(function (a, b) { return (b.play || 0) - (a.play || 0); }).slice(0, 5);
+  var html = '<h3>🔥 热度榜 <span>按 B 站播放量 · 每天自动更新同步</span></h3>';
+  for (i = 0; i < top.length; i++) {
+    var x = top[i];
+    html += '<a class="row" href="https://www.bilibili.com/video/' + x.bvid + '" target="_blank" rel="noopener">' +
+      '<span class="rk">' + medals[i] + '</span>' +
+      '<span class="nm">' + esc(x.title) + '</span>' +
+      '<span class="bar"><i style="width:' + ((x.play || 0) / max * 100).toFixed(1) + '%"></i></span>' +
+      '<span class="vv">' + (x.play || 0) + '</span></a>';
+  }
+  var box = document.createElement('div');
+  box.id = 'hot-rank';
+  box.innerHTML = html;
+  grid.parentNode.insertBefore(box, grid);
+
+  /* 顺带给每张卡片底部加一条播放量占比条 */
+  var cards = grid.querySelectorAll('.vcard');
+  for (i = 0; i < cards.length && i < v.length; i++) {
+    var meta = cards[i].querySelector('.vmeta');
+    if (!meta || !meta.parentNode) continue;
+    var b = document.createElement('span');
+    b.className = 'vbar';
+    b.innerHTML = '<i style="width:' + (((v[i].play || 0) / max) * 100).toFixed(1) + '%"></i>';
+    meta.parentNode.appendChild(b);
+  }
+})();
+</script>
+<!-- WORKS-RANK-END -->
