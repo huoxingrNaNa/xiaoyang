@@ -1,0 +1,266 @@
+<!-- FUN-EGG-START -->
+<style>
+#egg-hint{position:fixed;right:70px;bottom:12px;z-index:61;max-width:calc(100vw - 250px);
+  padding:5px 12px;border-radius:999px;background:rgba(12,20,30,.42);color:#eaf6ff;
+  font:12px/1.4 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;letter-spacing:.3px;
+  cursor:pointer;user-select:none;opacity:.5;transition:opacity .35s,background .35s;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#egg-hint:hover,#egg-hint:active{opacity:1;background:rgba(12,20,30,.75)}
+@media (max-width:560px){ /* hint-layout-v10 */
+  #egg-hint{left:50%;right:auto;bottom:62px;transform:translateX(-50%);max-width:calc(100vw - 28px);font-size:11px;padding:4px 10px}
+}
+#egg-ach-wrap{position:fixed;right:14px;top:14px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.egg-ach{display:flex;align-items:center;gap:10px;min-width:210px;padding:9px 13px;
+  background:rgba(24,24,24,.92);border:2px solid #4a4a4a;border-radius:3px;color:#fff;
+  font:13px/1.35 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,255,255,.05);
+  opacity:0;transform:translateX(130%);transition:opacity .25s ease,transform .4s cubic-bezier(.2,.9,.3,1.25)}
+.egg-ach.in{opacity:1;transform:none}
+.egg-ach .ic{flex:0 0 auto;width:32px;height:32px;display:grid;place-items:center;font-size:19px;
+  background:#2c2c2c;border:2px solid #555;border-radius:2px}
+.egg-ach .t{color:#fcfc54;font-weight:700}
+.egg-ach .n{color:#eceaea}
+#egg-f3{position:fixed;left:8px;top:8px;z-index:9997;pointer-events:none;max-width:94vw;
+  padding:6px 9px;border-radius:2px;background:rgba(0,0,0,.45);color:#fff;
+  font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+  text-shadow:1px 1px 0 rgba(0,0,0,.6);word-break:break-word}
+.egg-tip{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:9999;
+  padding:10px 16px;background:rgba(24,24,24,.92);border:2px solid #4a4a4a;border-radius:3px;
+  color:#fcfc54;font:600 15px ui-monospace,Menlo,Consolas,monospace;pointer-events:none;
+  animation:eggTip .3s ease-out}
+@keyframes eggTip{from{opacity:0;transform:translate(-50%,-50%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%)}}
+.egg-bit{position:fixed;width:6px;height:6px;margin:-3px 0 0 -3px;pointer-events:none;z-index:9998;
+  border-radius:1px;animation:eggBitAnim .85s ease-out forwards}
+@keyframes eggBitAnim{0%{transform:translate(0,0) scale(1);opacity:1}
+  100%{transform:translate(var(--dx,0),var(--dy,20px)) scale(.4);opacity:0}}
+.egg-gem{position:fixed;top:-6vh;font-size:22px;line-height:1;pointer-events:none;z-index:9996;
+  animation:eggGemAnim linear forwards}
+@keyframes eggGemAnim{0%{transform:translateY(0) rotate(0deg);opacity:0}
+  10%{opacity:1}100%{transform:translateY(112vh) rotate(220deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
+@media (max-width:520px){.egg-ach{min-width:0;max-width:78vw}}
+</style>
+<div id="egg-hint" role="button" tabindex="0">🍀 彩蛋：点这里看调试信息 · 试试 ↑↑↓↓←→←→BA</div>
+<div id="egg-ach-wrap" aria-live="polite"></div>
+<div id="egg-f3" hidden></div>
+<script>
+(function () {
+  var reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  /* ---------- 音效：全部 WebAudio 合成，零外部文件 ---------- */
+  var AC = null;
+  function ac() {
+    if (AC) return AC;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    try { AC = new C(); } catch (e) { AC = null; }
+    return AC;
+  }
+  function noise(dur, freq, q, vol) {
+    var c = ac(); if (!c) return;
+    var n = Math.max(1, Math.floor(c.sampleRate * dur));
+    var b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var s = c.createBufferSource(); s.buffer = b;
+    var f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    var g = c.createGain(); g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+  }
+  function tone(freq, delay, dur, vol, type) {
+    var c = ac(); if (!c) return;
+    var t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'triangle'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.06);
+  }
+  function sfxDig() { noise(0.12, 620, 1.1, 0.14); }
+  function sfxGet() { tone(784, 0, 0.22, 0.1, 'triangle'); tone(1175, 0.1, 0.3, 0.1, 'triangle'); }
+  function sfxGem() { tone(1568, 0, 0.1, 0.08, 'square'); }
+
+  /* ---------- 成就弹窗 ---------- */
+  var STORE = 'xy_eggs_v1', got = {};
+  try { got = JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch (e) { got = {}; }
+  var wrap = document.getElementById('egg-ach-wrap');
+
+  function ach(id, name, icon) {
+    if (got[id] || !wrap) return;
+    got[id] = 1;
+    try { localStorage.setItem(STORE, JSON.stringify(got)); } catch (e) {}
+    if (AC) sfxGet();
+    var d = document.createElement('div');
+    d.className = 'egg-ach';
+    var ic = document.createElement('span'); ic.className = 'ic'; ic.textContent = icon;
+    var tx = document.createElement('span');
+    var t1 = document.createElement('span'); t1.className = 't'; t1.textContent = '成就达成！';
+    var t2 = document.createElement('span'); t2.className = 'n'; t2.textContent = name;
+    tx.appendChild(t1); tx.appendChild(document.createElement('br')); tx.appendChild(t2);
+    d.appendChild(ic); d.appendChild(tx);
+    wrap.appendChild(d);
+    requestAnimationFrame(function () { d.className = 'egg-ach in'; });
+    setTimeout(function () {
+      d.className = 'egg-ach';
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 520);
+    }, 4200);
+  }
+
+  /* ---------- 挖方块：粒子 + 音效 ---------- */
+  var COLORS = ['#7cbf5a', '#5d9a3d', '#8b5a34', '#a9713f'];
+  function gone(el, ms) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, ms); }
+  function digFx(x, y) {
+    if (reduce) return;
+    for (var i = 0; i < 8; i++) {
+      var p = document.createElement('i');
+      p.className = 'egg-bit';
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      var a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 28;
+      p.style.setProperty('--dx', (Math.cos(a) * r).toFixed(1) + 'px');
+      p.style.setProperty('--dy', (Math.sin(a) * r + 16).toFixed(1) + 'px');
+      p.style.background = COLORS[i % COLORS.length];
+      document.body.appendChild(p);
+      gone(p, 950);
+    }
+  }
+
+  /* ---------- 钻石雨 ---------- */
+  var GEMS = ['💎', '💎', '⭐', '🟩'];
+  function gemRain() {
+    if (AC) sfxGem();
+    if (reduce) return;
+    for (var i = 0; i < 34; i++) {
+      var s = document.createElement('div');
+      s.className = 'egg-gem';
+      s.textContent = GEMS[Math.floor(Math.random() * GEMS.length)];
+      s.style.left = (Math.random() * 98).toFixed(1) + 'vw';
+      s.style.animationDelay = (Math.random() * 1.4).toFixed(2) + 's';
+      s.style.animationDuration = (2.2 + Math.random() * 1.8).toFixed(2) + 's';
+      document.body.appendChild(s);
+      gone(s, 5800);
+    }
+  }
+
+  /* ---------- F3 调试屏 ---------- */
+  var f3 = document.getElementById('egg-f3');
+  var f3on = false, rafId = 0, frames = 0, lastT = 0, fps = 0, mx = 0;
+
+  function lines() {
+    var px = mx / 4, py = 64 + Math.sin(Date.now() / 4000) * 8, pz = -window.pageYOffset / 8;
+    var day = Math.floor(Date.now() / 86400000) % 365 + 1;
+    return [
+      '<b>xiao小小阳</b> · Minecraft 1.20.1 (Java Edition)',
+      'FPS: ' + (fps || '--'),
+      'XYZ: ' + px.toFixed(1) + ' / ' + py.toFixed(1) + ' / ' + pz.toFixed(1),
+      'Block: ' + Math.floor(px) + ' ' + Math.floor(py) + ' ' + Math.floor(pz),
+      'Biome: minecraft:plains',
+      'Light: 15 (15 sky, 0 block)',
+      'Day: ' + day + ' · ' + new Date().toTimeString().slice(0, 8),
+      'Dimension: minecraft:overworld',
+      'Local Difficulty: ' + (1 + (Date.now() % 100) / 100).toFixed(2),
+      'Loaded Chunks: ' + document.querySelectorAll('*').length,
+      'Entities: ' + document.querySelectorAll('.egg-gem').length + ' · Screen: ' + window.innerWidth + 'x' + window.innerHeight
+    ].join('<br>');
+  }
+  function loop(t) {
+    if (!f3on) { rafId = 0; return; }
+    rafId = requestAnimationFrame(loop);
+    frames++;
+    if (lastT && t - lastT >= 500) { fps = Math.round(frames * 1000 / (t - lastT)); frames = 0; lastT = t; }
+    if (f3) f3.innerHTML = lines();
+  }
+  function setF3(on) {
+    if (!f3) return;
+    f3on = (typeof on === 'boolean') ? on : !f3on;
+    if (f3on) {
+      f3.hidden = false; frames = 0; lastT = 0;
+      if (!rafId) rafId = requestAnimationFrame(loop);
+      ach('debug', '调试大师 —— 打开了 F3', '🔍');
+    } else {
+      f3.hidden = true;
+    }
+  }
+
+  /* ---------- Konami 秘籍 ---------- */
+  var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  var kpos = 0;
+  function creative() {
+    ach('creative', '创造模式 —— 你输对了秘籍', '💎');
+    gemRain();
+    if (reduce) return;
+    var tip = document.createElement('div');
+    tip.className = 'egg-tip';
+    tip.textContent = '/gamemode creative';
+    document.body.appendChild(tip);
+    gone(tip, 1700);
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'F3') { e.preventDefault(); setF3(); return; }
+    var k = (e.key && e.key.length === 1) ? e.key.toLowerCase() : e.key;
+    if (k === KONAMI[kpos]) {
+      kpos++;
+      if (kpos === KONAMI.length) { kpos = 0; creative(); }
+    } else {
+      kpos = (k === KONAMI[0]) ? 1 : 0;
+    }
+  });
+
+  /* ---------- 交互：点击挖方块 / 点开作品 ---------- */
+  var clicks = 0;
+  document.addEventListener('mousemove', function (e) { mx = e.clientX; }, { passive: true });
+  document.addEventListener('touchstart', function () {
+    var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+  }, { passive: true });
+  document.addEventListener('click', function (e) {
+    var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+    var t = e.target;
+    if (t && t.closest && t.closest('a,button,#egg-hint,#egg-mus,#egg-stats,#egg-sp,.egg-ach')) {
+      if (t.closest('a,button,[data-bvid],.card,.work-card')) ach('play', '鉴赏家 —— 点开了作品', '📺');
+      return;
+    }
+    sfxDig();
+    digFx(e.clientX, e.clientY);
+    clicks++;
+    if (clicks === 15) ach('dig', '破坏方块达人 —— 连挖 15 下', '⛏️');
+  }, true);
+
+  /* ---------- 首次见面 + 翻到作品区 ---------- */
+  setTimeout(function () { ach('first', '初次见面 —— 欢迎来到方块世界', '🟩'); }, 2200);
+  (function watchWorks() {
+    var el = document.getElementById('works') || document.querySelector('section');
+    if (!el) return;
+    var fired = false;
+    function check() {
+      if (fired) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < (window.innerHeight || 0) * 0.85) {
+        fired = true;
+        ach('works', '旅行者 —— 翻到了作品区', '🗺️');
+        window.removeEventListener('scroll', check);
+      }
+    }
+    window.addEventListener('scroll', check, { passive: true });
+    setTimeout(check, 800);
+  })();
+
+  /* ---------- 提示条 ---------- */
+  var hint = document.getElementById('egg-hint');
+  if (hint) {
+    hint.addEventListener('click', function () { setF3(); });
+    hint.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setF3(); }
+    });
+    setTimeout(function () { hint.style.opacity = '.24'; }, 15000);
+  }
+
+  window.xyAch = ach;
+  window.xySfx = { dig: sfxDig, get: sfxGet, gem: sfxGem, pop: function () { tone(1046, 0, 0.12, 0.1, 'square'); } };
+  window.xyAC = ac;
+  try {
+    console.log('%c⛏ xiao小小阳 · 方块世界', 'background:#3c8527;color:#fff;padding:4px 8px;font-weight:700');
+    console.log('%c彩蛋：↑↑↓↓←→←→BA  或按 F3', 'color:#fcfc54');
+    console.log('%c/execute as @s run say 你好，冒险者', 'color:#7fd1ff');
+  } catch (e) {}
+})();
+</script>
+<!-- FUN-EGG-END -->
