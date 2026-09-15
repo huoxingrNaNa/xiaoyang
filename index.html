@@ -1385,8 +1385,12 @@
   10%{opacity:1}100%{transform:translateY(112vh) rotate(220deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
 @media (max-width:520px){.egg-ach{min-width:0;max-width:78vw}}
+  /* ---- v17：提示条分端文案 ---- */
+  #egg-hint .hint-mob{display:none}
+  html.is-touch #egg-hint .hint-pc{display:none}
+  html.is-touch #egg-hint .hint-mob{display:inline}
 </style>
-<div id="egg-hint" role="button" tabindex="0">🍀 彩蛋：点这里看调试信息 · 试试 ↑↑↓↓←→←→BA</div>
+<div id="egg-hint" role="button" tabindex="0">🍀 彩蛋：点这里看调试信息 · <span class="hint-pc">试试 ↑↑↓↓←→←→BA</span><span class="hint-mob">长按屏幕 1.2 秒有惊喜</span></div>
 <div id="egg-ach-wrap" aria-live="polite"></div>
 <div id="egg-f3" hidden></div>
 <script>
@@ -1558,6 +1562,7 @@
     var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
   }, { passive: true });
   document.addEventListener('click', function (e) {
+    if (pressFired) { pressFired = false; return; }   /* v17：长按彩蛋刚触发，忽略这次点击 */
     var c = ac(); if (c && c.state === 'suspended') { try { c.resume(); } catch (e) {} }
     var t = e.target;
     if (t && t.closest && t.closest('a,button,#egg-hint,#egg-mus,#egg-stats,#egg-sp,.egg-ach')) {
@@ -1589,6 +1594,38 @@
     setTimeout(check, 800);
   })();
 
+  /* ---------- v17 触屏：长按 1.2 秒 = 手机版「创造模式」 ---------- */
+  var pressTimer = null;
+  var pressX = 0;
+  var pressY = 0;
+  var pressFired = false;
+  function isTouchDevice() { return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); }
+  if (isTouchDevice()) { document.documentElement.className += ' is-touch'; }
+  function cancelPress() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
+  document.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) { cancelPress(); return; }
+    var t = e.target;
+    if (t && t.closest && t.closest('a,button,#egg-hint,#egg-mus,#egg-stats,#egg-sp,.egg-ach')) return;
+    pressX = e.touches[0].clientX;
+    pressY = e.touches[0].clientY;
+    cancelPress();
+    pressTimer = setTimeout(function () {
+      pressTimer = null;
+      pressFired = true;
+      if (window.getSelection) { try { window.getSelection().removeAllRanges(); } catch (err) {} }
+      if (navigator.vibrate) { try { navigator.vibrate([12, 40, 12]); } catch (err) {} }
+      sfxGem();
+      creative();
+    }, 1200);
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (!pressTimer) return;
+    if (!e.touches[0]) { cancelPress(); return; }
+    if (Math.abs(e.touches[0].clientX - pressX) > 12 || Math.abs(e.touches[0].clientY - pressY) > 12) cancelPress();
+  }, { passive: true });
+  document.addEventListener('touchend', function () { cancelPress(); }, { passive: true });
+  document.addEventListener('touchcancel', function () { cancelPress(); pressFired = false; }, { passive: true });
+
   /* ---------- 提示条 ---------- */
   var hint = document.getElementById('egg-hint');
   if (hint) {
@@ -1604,7 +1641,7 @@
   window.xyAC = ac;
   try {
     console.log('%c⛏ xiao小小阳 · 方块世界', 'background:#3c8527;color:#fff;padding:4px 8px;font-weight:700');
-    console.log('%c彩蛋：↑↑↓↓←→←→BA  或按 F3', 'color:#fcfc54');
+    console.log('%c彩蛋：↑↑↓↓←→←→BA / F3 / 手机长按屏幕 1.2 秒', 'color:#fcfc54');
     console.log('%c/execute as @s run say 你好，冒险者', 'color:#7fd1ff');
   } catch (e) {}
 })();
