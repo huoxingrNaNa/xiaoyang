@@ -34,6 +34,7 @@ tools/
 │   ├── patch_v14.py           ← 注入 PWA 头部 + 作品热度榜
 │   ├── patch_v15.py           ← 注入 noscript 兜底 + 首页 JSON-LD
 │   ├── patch_v16.py           ← 一次性：让 refresh.py 顺带更新 noscript 作品清单
+│   ├── patch_v17.py           ← 一次性：彩蛋手机适配（长按手势 + 提示条文案分端）
 │   └── patch_readme_v8.py     ← 一次性：README 补入口
 └── scripts/                   ← 日常脚本
     ├── upload.py              ← 上传文件到 GitHub（自动读远端 sha / 跟随仓库改名）
@@ -67,7 +68,7 @@ tools/
 
 ## 一次性补丁（已生效，**不要重跑**）
 
-`patch_site_v3` / `v4` / `v5` / `v6` / `v10` / `v12` / `v13` / `patch_music_hook` / `patch_readme_v8` / `patch_v16`
+`patch_site_v3` / `v4` / `v5` / `v6` / `v10` / `v12` / `v13` / `patch_music_hook` / `patch_readme_v8` / `patch_v16` / `patch_v17`
 
 原因：它们改的是**当时那份 HTML 的局部文本**，锚点如今已被后续补丁改写；
 或者结果**已经固化进 `templates/`**（例如 v10 的布局修正、v12 的 `ymdCN`、v13 的 `fbActive` 都已经在模板里了）。
@@ -117,6 +118,7 @@ export GITHUB_TOKEN=ghp_xxxxxxxx
 - **`sw.js` 缓存**：换了图标 / manifest / 预缓存清单后，必须把 `VER` 加一，否则老访客一直吃旧缓存。
 - **`404.html` 必须放仓库根目录**（GitHub Pages 的约定），不能用子目录。
 - **`robots.txt` 对项目页作用有限**：爬虫规范上只读域名根 `https://huoxingrnana.github.io/robots.txt`，而项目页在 `/xiaoyang/` 下，所以这里的 robots.txt 更像一份声明，**sitemap 的作用更实际**。
+- **彩蛋的手机适配（v17）**：触屏设备没有键盘，所以「创造模式」钻石雨改用手势触发 —— **长按屏幕 1.2 秒**（移动超过 12px 或落在按钮/链接上会取消，不会影响滑动与点击）；提示条文案按 `html.is-touch` 分端显示（电脑给键位、手机给手势）。
 - **补丁里的 `DIR` 硬编码为 `/root/websrc`**（沙箱路径）。换环境后需要先改这些常量，或用 `sh tools/rebuild.sh <工作目录>`。
 - **沙箱不是保险箱**：本目录就是为此存在的——页面成品在 GitHub，源码在这里也有一份。
 
