@@ -1,0 +1,21 @@
+{
+  "name": "xiao小小阳 · 用方块搭一个世界",
+  "short_name": "xiao小小阳",
+  "description": "Minecraft 动画 UP 主 xiao小小阳的个人主页：作品、成就、方块工坊小游戏",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#5fb8f5",
+  "theme_color": "#5fb8f5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "全部作品", "url": "./works.html" },
+    { "name": "方块工坊", "url": "./game.html" }
+  ]
+}
