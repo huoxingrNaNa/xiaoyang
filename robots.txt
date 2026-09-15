@@ -1,0 +1,10 @@
+# xiao小小阳 · 用方块搭一个世界
+# https://huoxingrnana.github.io/xiaoyang/
+#
+# 说明：项目页（/xiaoyang/）下的 robots.txt 并非爬虫规范位置，
+#      爬虫通常只读取域名根的 robots.txt。此处主要用于声明 sitemap 位置。
+
+User-agent: *
+Allow: /
+
+Sitemap: https://huoxingrnana.github.io/xiaoyang/sitemap.xml
