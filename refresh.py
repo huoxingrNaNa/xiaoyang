@@ -82,12 +82,32 @@ def set_stat(html, key, value):
     return re.subn(r'data-stat="%s">[^<]*<' % key, 'data-stat="%s">%s<' % (key, value), html)[0]
 
 
+def render_noscript_list(vids):
+    """纯 HTML 作品清单（noscript 兜底用），与 VIDEOS-DATA 同步刷新。"""
+    if not vids:
+        return None
+    items = []
+    for v in vids:
+        t = (v.get('title') or '').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        items.append(
+            '<li style="margin:3px 0">'
+            '<a href="https://www.bilibili.com/video/%s/" style="color:#2c7be5;text-decoration:none">%s</a>'
+            '<span style="color:#7a8894;font-size:12px"> · %s 播放 · %s</span></li>'
+            % (v.get('bvid', ''), t, v.get('play', 0), v.get('dur', '')))
+    return '<ul style="margin:0;padding-left:20px">' + ''.join(items) + '</ul>'
+
+
 def patch_html(html, total, vids, stats):
     blob = json.dumps(vids, ensure_ascii=False, separators=(',', ':'))
     pat = re.compile(r'(<!-- VIDEOS-DATA-START.*?-->)(\s*<script id="video-data" type="application/json">).*?(</script>)', re.S)
     html, n = pat.subn(lambda m: m.group(1) + m.group(2) + blob + m.group(3), html)
     if n != 1:
         raise RuntimeError('视频数据区匹配 %d 次，中止' % n)
+
+    ns = render_noscript_list(vids)
+    pat_ns = re.compile(r'(<!-- NOSCRIPT-LIST-START -->).*?(<!-- NOSCRIPT-LIST-END -->)', re.S)
+    if ns and pat_ns.search(html):
+        html = pat_ns.sub(lambda m: m.group(1) + '\n' + ns + '\n' + m.group(2), html, count=1)
 
     html = set_stat(html, 'videos', total)
     html = set_stat(html, 'updated', time.strftime('%Y-%m-%d'))
