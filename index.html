@@ -1779,7 +1779,12 @@
   }
   function num(j) { return (j && typeof j.value === 'number') ? j.value : null; }
 
-  var today = ymd(new Date());
+  /* 统一按北京时间（UTC+8）分桶：不然海外访客会把同一天拆到不同日期键 */
+  function ymdCN(ts) {
+    var t = new Date(ts + 8 * 3600000);
+    return t.getUTCFullYear() + pad(t.getUTCMonth() + 1) + pad(t.getUTCDate());
+  }
+  var today = ymdCN(Date.now());
   var snap = cget('xy_snap') || {};
 
   /* ---------- 徽章 ---------- */
@@ -1817,8 +1822,8 @@
   /* ---------- 统计面板 ---------- */
   var sp = null;
   function lastDays(n) {
-    var out = [], now = new Date();
-    for (var i = n - 1; i >= 0; i--) out.push(ymd(new Date(now.getTime() - i * 86400000)));
+    var out = [], base = Date.now();
+    for (var i = n - 1; i >= 0; i--) out.push(ymdCN(base - i * 86400000));
     return out;
   }
   function build() {
