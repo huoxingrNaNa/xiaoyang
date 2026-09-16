@@ -64,7 +64,7 @@ def fetch_videos():
             'cover': v['cover'].replace('http://', 'https://') + '@480w_300h_1c.webp',
             'play': v.get('play') or 0,
             'dur': '%d:%02d' % (dur // 60, dur % 60),
-            'date': time.strftime('%Y-%m-%d', time.localtime(v['ctime'])) if v.get('ctime') else '',
+            'date': ymd_cn(v['ctime']) if v.get('ctime') else '',
         })
     return (d.get('data') or {}).get('count') or len(vids), vids
 
@@ -76,6 +76,20 @@ def fetch_stats(old_likes):
     if likes in (None, 0):
         likes = old_likes
     return {'fans': card.get('fans'), 'likes': likes}
+
+
+TZ8 = 8 * 3600          # 北京时间 UTC+8（与站点统计口径一致）
+
+
+def ymd_cn(ts=None):
+    """按北京时间取年月日；不传 ts 就取当前时间。"""
+    return time.strftime('%Y-%m-%d', time.gmtime((time.time() if ts is None else ts) + TZ8))
+
+
+def set_at(html, key, value):
+    """写入 data-at 属性（机器可读时间戳，供页面算「X 小时前」）。"""
+    pat = r'(<span[^>]*data-at=")[^"]*("[^>]*data-stat="%s")' % key
+    return re.subn(pat, lambda m: m.group(1) + value + m.group(2), html)[0]
 
 
 def set_stat(html, key, value):
@@ -110,7 +124,9 @@ def patch_html(html, total, vids, stats):
         html = pat_ns.sub(lambda m: m.group(1) + '\n' + ns + '\n' + m.group(2), html, count=1)
 
     html = set_stat(html, 'videos', total)
-    html = set_stat(html, 'updated', time.strftime('%Y-%m-%d'))
+    html = set_stat(html, 'updated', ymd_cn())
+    html = set_at(html, 'updated',
+                  time.strftime('%Y-%m-%dT%H:%M:%S+08:00', time.gmtime(time.time() + TZ8)))
     if stats.get('fans') is not None:
         html = set_stat(html, 'fans', stats['fans'])
     if stats.get('likes') is not None:
