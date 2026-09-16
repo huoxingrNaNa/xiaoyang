@@ -35,6 +35,7 @@ tools/
 │   ├── patch_v15.py           ← 注入 noscript 兜底 + 首页 JSON-LD
 │   ├── patch_v16.py           ← 一次性：让 refresh.py 顺带更新 noscript 作品清单
 │   ├── patch_v17.py           ← 一次性：彩蛋手机适配（长按手势 + 提示条文案分端）
+│   ├── patch_v18.py           ← 一次性：提示条改按「主输入设备」判定 + 更新日期相对化
 │   └── patch_readme_v8.py     ← 一次性：README 补入口
 └── scripts/                   ← 日常脚本
     ├── upload.py              ← 上传文件到 GitHub（自动读远端 sha / 跟随仓库改名）
@@ -68,7 +69,7 @@ tools/
 
 ## 一次性补丁（已生效，**不要重跑**）
 
-`patch_site_v3` / `v4` / `v5` / `v6` / `v10` / `v12` / `v13` / `patch_music_hook` / `patch_readme_v8` / `patch_v16` / `patch_v17`
+`patch_site_v3` / `v4` / `v5` / `v6` / `v10` / `v12` / `v13` / `patch_music_hook` / `patch_readme_v8` / `patch_v16` / `patch_v17` / `patch_v18`
 
 原因：它们改的是**当时那份 HTML 的局部文本**，锚点如今已被后续补丁改写；
 或者结果**已经固化进 `templates/`**（例如 v10 的布局修正、v12 的 `ymdCN`、v13 的 `fbActive` 都已经在模板里了）。
@@ -119,6 +120,9 @@ export GITHUB_TOKEN=ghp_xxxxxxxx
 - **`404.html` 必须放仓库根目录**（GitHub Pages 的约定），不能用子目录。
 - **`robots.txt` 对项目页作用有限**：爬虫规范上只读域名根 `https://huoxingrnana.github.io/robots.txt`，而项目页在 `/xiaoyang/` 下，所以这里的 robots.txt 更像一份声明，**sitemap 的作用更实际**。
 - **彩蛋的手机适配（v17）**：触屏设备没有键盘，所以「创造模式」钻石雨改用手势触发 —— **长按屏幕 1.2 秒**（移动超过 12px 或落在按钮/链接上会取消，不会影响滑动与点击）；提示条文案按 `html.is-touch` 分端显示（电脑给键位、手机给手势）。
+- **日期口径（v18）**：`refresh.py` 统一按**北京时间 UTC+8** 取年月日（`ymd_cn()`），与站点统计口径一致；同时写入 `<span data-at="2026-09-17T00:19:33+08:00">` 机器可读时间戳，页面用 JS 显示成「X 小时前」。这样即使 GitHub 定时任务排队延后（本仓库实测晚 5 小时左右），页面看着也不会「过期」。
+- **提示条分端判定（v18）**：必须用 CSS 媒体查询 `(hover: none), (pointer: coarse)` 判断主输入设备；**不要**用 JS 的 `ontouchstart` / `maxTouchPoints` —— 触屏笔记本（有鼠标也有触摸屏）会被误判成手机，导致电脑上显示「长按屏幕」而不是箭头秘籍。
+- **GitHub 定时任务不准点**：`update.yml` 里写的 cron 只是「排队时间」，实测本仓库延迟 5 小时以上，所以任何依赖「定时任务运行时刻」的显示逻辑都不可靠，要用相对时间。
 - **补丁里的 `DIR` 硬编码为 `/root/websrc`**（沙箱路径）。换环境后需要先改这些常量，或用 `sh tools/rebuild.sh <工作目录>`。
 - **沙箱不是保险箱**：本目录就是为此存在的——页面成品在 GitHub，源码在这里也有一份。
 
