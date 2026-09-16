@@ -952,7 +952,28 @@
         <span class="stat-label">获赞</span>
       </div>
     </div>
-    <p class="hero-updated">数据更新于 <span data-stat="updated">2026-09-16</span> · 共 <span data-stat="videos">12</span> 个作品</p>
+    <p class="hero-updated">数据更新于 <span data-at="2026-09-17T00:19:33+08:00" data-stat="updated">2026-09-17</span> · 共 <span data-stat="videos">12</span> 个作品</p>
+    <script>
+    /* v18：把「数据更新于 2026-09-17」换成「数据更新于 9 小时前」（JS 关了就看日期，不影响） */
+    (function () {
+      var el = document.querySelector('[data-stat="updated"][data-at]');
+      if (!el) return;
+      var at = el.getAttribute('data-at');
+      if (!at) return;
+      var t = Date.parse(at);
+      if (isNaN(t)) return;
+      function upd() {
+        var m = Math.floor((Date.now() - t) / 60000), txt;
+        if (m < 1) txt = '刚刚';
+        else if (m < 60) txt = m + ' 分钟前';
+        else if (m < 1440) txt = Math.floor(m / 60) + ' 小时前';
+        else txt = Math.floor(m / 1440) + ' 天前';
+        if (el.textContent !== txt) el.textContent = txt;
+      }
+      upd();
+      setInterval(upd, 60000);
+    })();
+    </script>
 
     <div class="hero-btns">
       <a class="mc-btn green" href="#works">看看作品</a>
@@ -1048,7 +1069,7 @@
     </h2>
 
     <!-- VIDEOS-DATA-START（自动更新脚本只改这一段） -->
-    <script id="video-data" type="application/json">[{"bvid":"BV1N7kWB7Eit","title":"【BBS】动画小练习11","cover":"https://i0.hdslb.com/bfs/archive/83803ad15465ab83a41130c2dd431e1a5d526069.jpg@480w_300h_1c.webp","play":466,"dur":"0:36","date":"2026-01-18"},{"bvid":"BV1uA2ZB8EBQ","title":"【BBS】动画小练习10","cover":"https://i2.hdslb.com/bfs/archive/8853f59f9b4d47ae530b6daa2d3777170e33e74d.jpg@480w_300h_1c.webp","play":130,"dur":"0:09","date":"2025-12-07"},{"bvid":"BV1sxSTBpEf3","title":"【BBS】动画小练习9","cover":"https://i0.hdslb.com/bfs/archive/02b6e9d6f6b4b859c52e7661f01fe78584665130.jpg@480w_300h_1c.webp","play":206,"dur":"0:14","date":"2025-11-30"},{"bvid":"BV1QBUfB3E6F","title":"【BBS】动画小练习8","cover":"https://i1.hdslb.com/bfs/archive/03a1409b9f10a0878fa7548f01736810f703e8d0.jpg@480w_300h_1c.webp","play":53,"dur":"0:07","date":"2025-11-29"},{"bvid":"BV1neUdB7EaK","title":"【BBS】动画小练习7","cover":"https://i0.hdslb.com/bfs/archive/7c4f7bbc10c6b8c44f908a6bcba863234ac95a3b.jpg@480w_300h_1c.webp","play":277,"dur":"0:45","date":"2025-11-29"},{"bvid":"BV1giS7BxE1k","title":"[BBS]动画小练习 6","cover":"https://i0.hdslb.com/bfs/archive/e88675ea78bac10a8c720ff41f18af5dc3be4574.jpg@480w_300h_1c.webp","play":99,"dur":"0:07","date":"2025-11-28"},{"bvid":"BV1cMUnBEEXe","title":"【BBS】动画小练习5","cover":"https://i0.hdslb.com/bfs/archive/164a7eb3d024ce2ab16cb095c8085270a18adf54.jpg@480w_300h_1c.webp","play":371,"dur":"0:32","date":"2025-11-22"},{"bvid":"BV1MSCDBPECT","title":"[BBS]动画小练习4独攀","cover":"https://i2.hdslb.com/bfs/archive/ae9f0bcc1b6992e1946554e2b1a9d4c8d969ca48.jpg@480w_300h_1c.webp","play":266,"dur":"0:16","date":"2025-11-16"},{"bvid":"BV1UhCQBNEFQ","title":"【BBS】动画小练习3","cover":"https://i0.hdslb.com/bfs/archive/c844e362c41bd0aa1c1f588def28ba861e2dca21.jpg@480w_300h_1c.webp","play":337,"dur":"0:46","date":"2025-11-16"},{"bvid":"BV1xnkUBHEJ2","title":"【BBS】动画小练习2","cover":"https://i1.hdslb.com/bfs/archive/85145c749dc890cdcba8fc1bedd3285273fc8172.jpg@480w_300h_1c.webp","play":279,"dur":"0:13","date":"2025-11-09"},{"bvid":"BV17s1SBJEvY","title":"【BBS】动画小练习","cover":"https://i1.hdslb.com/bfs/archive/5a6ebd1dcbf640fd06372dbd0208440c9079b97a.jpg@480w_300h_1c.webp","play":1820,"dur":"0:31","date":"2025-11-08"},{"bvid":"BV1kibXz6Ewr","title":"如果你是方块人你就跳舞🎵","cover":"https://i2.hdslb.com/bfs/archive/050bf2efee38d1f90785d06d3433b323871c4df7.jpg@480w_300h_1c.webp","play":3091,"dur":"0:15","date":"2025-07-25"}]</script>
+    <script id="video-data" type="application/json">[{"bvid":"BV1N7kWB7Eit","title":"【BBS】动画小练习11","cover":"https://i0.hdslb.com/bfs/archive/83803ad15465ab83a41130c2dd431e1a5d526069.jpg@480w_300h_1c.webp","play":466,"dur":"0:36","date":"2026-01-18"},{"bvid":"BV1uA2ZB8EBQ","title":"【BBS】动画小练习10","cover":"https://i2.hdslb.com/bfs/archive/8853f59f9b4d47ae530b6daa2d3777170e33e74d.jpg@480w_300h_1c.webp","play":130,"dur":"0:09","date":"2025-12-07"},{"bvid":"BV1sxSTBpEf3","title":"【BBS】动画小练习9","cover":"https://i0.hdslb.com/bfs/archive/02b6e9d6f6b4b859c52e7661f01fe78584665130.jpg@480w_300h_1c.webp","play":206,"dur":"0:14","date":"2025-11-30"},{"bvid":"BV1QBUfB3E6F","title":"【BBS】动画小练习8","cover":"https://i1.hdslb.com/bfs/archive/03a1409b9f10a0878fa7548f01736810f703e8d0.jpg@480w_300h_1c.webp","play":53,"dur":"0:07","date":"2025-11-29"},{"bvid":"BV1neUdB7EaK","title":"【BBS】动画小练习7","cover":"https://i0.hdslb.com/bfs/archive/7c4f7bbc10c6b8c44f908a6bcba863234ac95a3b.jpg@480w_300h_1c.webp","play":277,"dur":"0:45","date":"2025-11-29"},{"bvid":"BV1giS7BxE1k","title":"[BBS]动画小练习 6","cover":"https://i0.hdslb.com/bfs/archive/e88675ea78bac10a8c720ff41f18af5dc3be4574.jpg@480w_300h_1c.webp","play":99,"dur":"0:07","date":"2025-11-28"},{"bvid":"BV1cMUnBEEXe","title":"【BBS】动画小练习5","cover":"https://i0.hdslb.com/bfs/archive/164a7eb3d024ce2ab16cb095c8085270a18adf54.jpg@480w_300h_1c.webp","play":371,"dur":"0:32","date":"2025-11-22"},{"bvid":"BV1MSCDBPECT","title":"[BBS]动画小练习4独攀","cover":"https://i2.hdslb.com/bfs/archive/ae9f0bcc1b6992e1946554e2b1a9d4c8d969ca48.jpg@480w_300h_1c.webp","play":266,"dur":"0:16","date":"2025-11-16"},{"bvid":"BV1UhCQBNEFQ","title":"【BBS】动画小练习3","cover":"https://i0.hdslb.com/bfs/archive/c844e362c41bd0aa1c1f588def28ba861e2dca21.jpg@480w_300h_1c.webp","play":337,"dur":"0:46","date":"2025-11-16"},{"bvid":"BV1xnkUBHEJ2","title":"【BBS】动画小练习2","cover":"https://i1.hdslb.com/bfs/archive/85145c749dc890cdcba8fc1bedd3285273fc8172.jpg@480w_300h_1c.webp","play":279,"dur":"0:13","date":"2025-11-09"},{"bvid":"BV17s1SBJEvY","title":"【BBS】动画小练习","cover":"https://i1.hdslb.com/bfs/archive/5a6ebd1dcbf640fd06372dbd0208440c9079b97a.jpg@480w_300h_1c.webp","play":1820,"dur":"0:31","date":"2025-11-08"},{"bvid":"BV1kibXz6Ewr","title":"如果你是方块人你就跳舞🎵","cover":"https://i2.hdslb.com/bfs/archive/050bf2efee38d1f90785d06d3433b323871c4df7.jpg@480w_300h_1c.webp","play":3091,"dur":"0:15","date":"2025-07-26"}]</script>
     <!-- VIDEOS-DATA-END -->
 
     <div class="player-wrap">
@@ -1385,10 +1406,12 @@
   10%{opacity:1}100%{transform:translateY(112vh) rotate(220deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
 @media (max-width:520px){.egg-ach{min-width:0;max-width:78vw}}
-  /* ---- v17：提示条分端文案 ---- */
+  /* ---- v18：按主输入设备决定文案（鼠标=键盘秘籍 / 触屏=长按手势）---- */
   #egg-hint .hint-mob{display:none}
-  html.is-touch #egg-hint .hint-pc{display:none}
-  html.is-touch #egg-hint .hint-mob{display:inline}
+  @media (hover: none), (pointer: coarse){
+    #egg-hint .hint-pc{display:none}
+    #egg-hint .hint-mob{display:inline}
+  }
 </style>
 <div id="egg-hint" role="button" tabindex="0">🍀 彩蛋：点这里看调试信息 · <span class="hint-pc">试试 ↑↑↓↓←→←→BA</span><span class="hint-mob">长按屏幕 1.2 秒有惊喜</span></div>
 <div id="egg-ach-wrap" aria-live="polite"></div>
@@ -1599,8 +1622,7 @@
   var pressX = 0;
   var pressY = 0;
   var pressFired = false;
-  function isTouchDevice() { return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); }
-  if (isTouchDevice()) { document.documentElement.className += ' is-touch'; }
+  /* v18：提示文案改由 CSS 媒体查询（hover/pointer）判定，不再用 JS 猜设备 */
   function cancelPress() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
   document.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) { cancelPress(); return; }
