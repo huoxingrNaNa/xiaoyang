@@ -459,10 +459,12 @@ footer a { color: inherit; }
   10%{opacity:1}100%{transform:translateY(112vh) rotate(220deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){.egg-bit,.egg-gem,.egg-tip{display:none}}
 @media (max-width:520px){.egg-ach{min-width:0;max-width:78vw}}
-  /* ---- v17：提示条分端文案 ---- */
+  /* ---- v18：按主输入设备决定文案（鼠标=键盘秘籍 / 触屏=长按手势）---- */
   #egg-hint .hint-mob{display:none}
-  html.is-touch #egg-hint .hint-pc{display:none}
-  html.is-touch #egg-hint .hint-mob{display:inline}
+  @media (hover: none), (pointer: coarse){
+    #egg-hint .hint-pc{display:none}
+    #egg-hint .hint-mob{display:inline}
+  }
 </style>
 <div id="egg-hint" role="button" tabindex="0">🍀 彩蛋：点这里看调试信息 · <span class="hint-pc">试试 ↑↑↓↓←→←→BA</span><span class="hint-mob">长按屏幕 1.2 秒有惊喜</span></div>
 <div id="egg-ach-wrap" aria-live="polite"></div>
@@ -673,8 +675,7 @@ footer a { color: inherit; }
   var pressX = 0;
   var pressY = 0;
   var pressFired = false;
-  function isTouchDevice() { return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); }
-  if (isTouchDevice()) { document.documentElement.className += ' is-touch'; }
+  /* v18：提示文案改由 CSS 媒体查询（hover/pointer）判定，不再用 JS 猜设备 */
   function cancelPress() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
   document.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) { cancelPress(); return; }
