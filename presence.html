@@ -205,6 +205,8 @@
   loadNtfy().then(function (ok) {
     if (ok) return;
     return loadFile();
+  }).catch(function () {
+    return loadFile();      /* 后门服务整个连不上时，也要试一下仓库里的备用文件 */
   }).catch(function () { /* 两条源都不通：保持按时间的自动状态，不影响页面 */ });
 })();
 </script>
