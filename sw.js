@@ -5,7 +5,7 @@
    - 第三方（abacus 计数器 / busuanzi / B站封面）：完全不碰，避免缓存住动态数据
    换图（头像/og.jpg/图标）后想强制刷新缓存，把 VER 改一下即可
 */
-var VER = 'v1';
+var VER = 'v2';
 var CACHE = 'xiaoyang-' + VER;
 var CORE = ['./', './index.html', './works.html', './game.html', './manifest.json', './avatar.jpg', './og.jpg', './icon-192.png', './icon-512.png'];
 
@@ -46,6 +46,18 @@ self.addEventListener('fetch', function (e) {
           return hit || caches.match('./index.html');
         });
       })
+    );
+    return;
+  }
+
+  /* presence.txt：网络优先，尽量别吃缓存 —— 否则后门改了状态要等缓存过期才看到 */
+  if (/\/presence\.txt$/i.test(url.pathname)) {
+    e.respondWith(
+      fetch(req).then(function (r) {
+        var cp = r.clone();
+        caches.open(CACHE).then(function (c) { c.put(req, cp); });
+        return r;
+      }).catch(function () { return caches.match(req); })
     );
     return;
   }
