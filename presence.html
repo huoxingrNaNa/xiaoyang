@@ -1,0 +1,211 @@
+<!-- PRESENCE-BADGE-START -->
+<style>
+  /* ---- 状态徽章（v20）---- */
+  #presence{display:none;align-items:center;gap:7px;margin:12px 0 4px;padding:5px 14px;
+    border:2px solid #22303c;border-radius:999px;background:rgba(255,255,255,.94);
+    font-size:13.5px;font-weight:700;line-height:1.2;color:#22303c;
+    box-shadow:0 2px 0 rgba(34,48,60,.28);vertical-align:middle;
+    -webkit-user-select:none;user-select:none;cursor:pointer}
+  #presence.on{display:inline-flex}
+  #presence .p-dot{width:10px;height:10px;border-radius:50%;background:#3c8527;flex:0 0 10px;
+    box-shadow:0 0 12px rgba(60,133,39,.5)}
+  #presence.live .p-dot{animation:pPulse 1.6s ease-in-out infinite}
+  @keyframes pPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+  #presence .p-note{font-weight:500;color:#54636f}
+  @media (prefers-reduced-motion: reduce){#presence.live .p-dot{animation:none}}
+  /* ---- 后门面板 ---- */
+  #p-admin{position:fixed;top:0;right:0;bottom:0;left:0;z-index:99;display:none;
+    align-items:center;justify-content:center;background:rgba(10,18,26,.6);padding:16px}
+  #p-admin.on{display:flex}
+  #p-admin .p-box{width:100%;max-width:370px;background:#f7fbff;border:3px solid #22303c;
+    border-radius:14px;padding:16px 14px;box-shadow:0 7px 0 rgba(34,48,60,.35);color:#22303c;
+    font:400 14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  #p-admin h3{margin:0 0 2px;font-size:16px}
+  #p-admin .p-sub{font-size:12px;color:#6b7a88;margin:0 0 2px}
+  #p-admin code{background:#e8f2fb;padding:1px 4px;border-radius:4px;font-size:11px}
+  #p-admin .p-row{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+  #p-admin button{cursor:pointer;font:inherit;font-size:13px;font-weight:700;padding:8px 12px;
+    border:2px solid #22303c;border-radius:8px;background:#fff;color:#22303c;
+    box-shadow:0 3px 0 rgba(34,48,60,.55)}
+  #p-admin button.p-act{background:#5fb8f5;color:#fff}
+  #p-admin input{width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:9px 10px;
+    border:2px solid #22303c;border-radius:8px;background:#fff;color:#22303c}
+  #p-admin .p-msg{font-size:12px;min-height:17px;color:#3c8527;margin-top:6px;word-break:break-all}
+  #p-admin .p-msg.err{color:#d9534f}
+  #p-admin .p-close{float:right;padding:2px 10px}
+</style>
+
+<div id="presence" title="当前状态"><i class="p-dot"></i><span class="p-txt">在线</span><span class="p-note"></span></div>
+
+<div id="p-admin" role="dialog" aria-modal="true" aria-label="状态设置">
+  <div class="p-box">
+    <button class="p-close" id="p-close" aria-label="关闭">✕</button>
+    <h3>🛠 状态设置</h3>
+    <p class="p-sub">后门入口：2 秒内连点状态徽章 5 下，或网址后面加 <code>#admin</code></p>
+    <div class="p-row" id="p-presets"></div>
+    <input id="p-note" maxlength="40" placeholder="附一句（可留空，40 字以内）">
+    <div class="p-row">
+      <button class="p-act" id="p-save">保存</button>
+      <button id="p-auto">恢复自动</button>
+    </div>
+    <div class="p-msg" id="p-msg"></div>
+  </div>
+</div>
+
+<script>
+/* 状态徽章 v20：三源降级 ——
+   1) ntfy 通道（后门写入，秒级生效）
+   2) presence.txt（仓库里的备用文件，手机 GitHub 也能改）
+   3) 按北京时间自动判断（兜底，永远有显示）
+*/
+(function () {
+  /* ===== 配置 ===== */
+  var TOPIC = 'xiaoyang-presence-7k2q9';        /* 后门通道名：改这个等同换钥匙 */
+  var FILE = 'presence.txt';                    /* 备用状态文件（仓库根目录） */
+  var API = 'https://ntfy.sh/' + TOPIC;
+  var SCHED = [[450, 1350, '在线']];            /* 自动时段：07:30-22:30=在线，其余=睡觉中 */
+  var COLORS = { '在线': '#3c8527', '做动画中': '#3c8527', '忙碌': '#d9534f', '睡觉中': '#5b6dd8', '离线': '#9aa4ad' };
+  var LIVE = { '在线': 1, '做动画中': 1 };
+  var PRESETS = ['在线', '做动画中', '忙碌', '睡觉中', '离线'];
+
+  /* ===== 元素 ===== */
+  var el = document.getElementById('presence');
+  if (!el) return;
+  var txt = el.querySelector('.p-txt'), note = el.querySelector('.p-note'), dot = el.querySelector('.p-dot');
+  var admin = document.getElementById('p-admin'), msg = document.getElementById('p-msg');
+  var noteIn = document.getElementById('p-note');
+  var cur = '在线', pick = '', loaded = false;
+
+  /* ===== 时间（一律北京时间）===== */
+  function cnMin() {
+    var d = new Date(Date.now() + (new Date().getTimezoneOffset() * 60000) + 8 * 3600000);
+    return d.getHours() * 60 + d.getMinutes();
+  }
+  function autoName() {
+    var n = cnMin(), i, s;
+    for (i = 0; i < SCHED.length; i++) {
+      s = SCHED[i];
+      if (s[0] <= s[1] ? (n >= s[0] && n < s[1]) : (n >= s[0] || n < s[1])) return s[2];
+    }
+    return '睡觉中';
+  }
+
+  /* ===== 渲染 ===== */
+  function draw(name, nt) {
+    cur = name;
+    txt.textContent = name;
+    note.textContent = nt ? ' · ' + nt : '';
+    dot.style.background = COLORS[name] || '#5fb8f5';
+    el.className = 'on' + (LIVE[name] ? ' live' : '');
+    el.title = '当前状态：' + name + (nt ? ' · ' + nt : '') + '（2 秒内连点 5 下可改）';
+  }
+  function apply(raw) {
+    var p, name, nt;
+    if (!raw) { draw(autoName(), ''); return; }
+    p = String(raw).split('|');
+    name = (p[0] || '').replace(/^\s+|\s+$/g, '');
+    nt = (p[1] || '').replace(/^\s+|\s+$/g, '');
+    if (!name || name === '自动') { draw(autoName(), nt); return; }
+    if (!COLORS[name]) name = '在线';
+    draw(name, nt);
+  }
+
+  /* ===== 读取：ntfy → presence.txt ===== */
+  function loadNtfy() {
+    return fetch(API + '/json?poll=1&since=24h', { cache: 'no-store' })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var lines = t.split('\n'), i, o, last = '';
+        for (i = 0; i < lines.length; i++) {
+          if (!lines[i]) continue;
+          try { o = JSON.parse(lines[i]); } catch (e) { continue; }
+          if (o && o.event === 'message' && o.message) last = o.message;
+        }
+        if (!last) return false;
+        apply(last); loaded = true; return true;
+      });
+  }
+  function loadFile() {
+    return fetch(FILE + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (t) {
+        if (loaded || !t) return;
+        var lines = t.split('\n'), i, s, line = '';
+        for (i = 0; i < lines.length; i++) {
+          s = lines[i].replace(/^\s+|\s+$/g, '');
+          if (s && s.charAt(0) !== '#') { line = s; break; }   /* 跳过空行与 # 注释 */
+        }
+        if (line) apply(line);
+      });
+  }
+
+  /* ===== 写入 ===== */
+  function save(body) {
+    msg.className = 'p-msg';
+    msg.textContent = '保存中…';
+    fetch(API, { method: 'POST', body: body })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        loaded = true;
+        apply(body);
+        msg.textContent = '✓ 已保存：' + body.split('|').join(' ');
+      })
+      .catch(function () {
+        msg.className = 'p-msg err';
+        msg.innerHTML = '✗ 这个网络连不上后门服务。<br>备用办法：把 <b>' + body +
+          '</b> 写成 <a href="https://github.com/huoxingrNaNa/xiaoyang/edit/main/' + FILE +
+          '" target="_blank" rel="noopener">' + FILE + '</a> 的内容，约 1 分钟生效。';
+      });
+  }
+
+  /* ===== 面板 ===== */
+  function openAdmin() {
+    admin.className = 'on';
+    msg.className = 'p-msg';
+    msg.textContent = '';
+    noteIn.value = note.textContent.replace(/^\s*·\s*/, '');
+  }
+  function closeAdmin() { admin.className = ''; }
+  document.getElementById('p-close').onclick = closeAdmin;
+  admin.addEventListener('click', function (e) { if (e.target === admin) closeAdmin(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAdmin(); });
+
+  var presets = document.getElementById('p-presets');
+  (function () {
+    for (var i = 0; i < PRESETS.length; i++) {
+      (function (n) {
+        var b = document.createElement('button');
+        b.textContent = n;
+        b.onclick = function () {
+          pick = n;
+          save(n + '|' + (noteIn.value || '').replace(/\|/g, ' ').replace(/^\s+|\s+$/g, ''));
+        };
+        presets.appendChild(b);
+      })(PRESETS[i]);
+    }
+  })();
+  document.getElementById('p-save').onclick = function () {
+    var nt = (noteIn.value || '').replace(/\|/g, ' ').replace(/^\s+|\s+$/g, '');
+    save((pick || cur) + '|' + nt);
+  };
+  document.getElementById('p-auto').onclick = function () { save('自动|'); };
+
+  /* ===== 后门触发：2 秒内连点徽章 5 下 ===== */
+  var taps = 0, tapT = null;
+  el.addEventListener('click', function () {
+    taps++;
+    if (tapT) clearTimeout(tapT);
+    tapT = setTimeout(function () { taps = 0; }, 2000);
+    if (taps >= 5) { taps = 0; openAdmin(); }
+  });
+  if (/(#admin|#status)$/.test(location.hash)) openAdmin();
+
+  /* ===== 启动 ===== */
+  draw(autoName(), '');                     /* 先按时间显示，避免空白 */
+  loadNtfy().then(function (ok) {
+    if (ok) return;
+    return loadFile();
+  }).catch(function () { /* 两条源都不通：保持按时间的自动状态，不影响页面 */ });
+})();
+</script>
+<!-- PRESENCE-BADGE-END -->
