@@ -26,7 +26,8 @@ run "2/5 音乐 + 工坊入口 (v8)"   tools/patches/patch_v8.py
 run "3/5 访问量徽章 (v9)"       tools/patches/patch_v9.py
 run "4/5 统计面板 (v11)"        tools/patches/patch_v11.py
 run "5/5 PWA + 作品热度榜 (v14)" tools/patches/patch_v14.py
-run "6/6 noscript + JSON-LD (v15)" tools/patches/patch_v15.py
+run "6/7 noscript + JSON-LD (v15)" tools/patches/patch_v15.py
+run "7/7 状态徽章 + 后门 (v20)" tools/patches/patch_v20.py
 
 echo "== 校验：模块标记是否各就各位 =="
 python3 - "$DIR" <<'PY'
@@ -42,6 +43,9 @@ for f in ['index.html', 'works.html', 'game.html']:
     bad = ['%s=%d' % (m.split('-')[0], s.count(m)) for m in mods if s.count(m) != 1]
     print('   %-12s %s' % (f, 'OK' if not bad else '异常 -> ' + ', '.join(bad)))
     ok = ok and not bad
+si = io.open(os.path.join(d, 'index.html'), encoding='utf-8').read()
+if si.count('PRESENCE-BADGE-START') != 1:
+    print('   index.html   状态徽章缺失'); ok = False
 print('结果：', '✓ 全部模块就位' if ok else '✗ 有模块异常，请检查上面的补丁输出')
 PY
 
