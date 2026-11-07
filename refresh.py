@@ -181,7 +181,7 @@ def render_noscript_list(vids):
     return '<ul style="margin:0;padding-left:20px">' + ''.join(items) + '</ul>'
 
 
-def patch_html(html, total, vids, stats):
+def patch_html(html, total, vids, stats, touch_time=True):
     blob = json.dumps(vids, ensure_ascii=False, separators=(',', ':'))
     pat = re.compile(r'(<!-- VIDEOS-DATA-START.*?-->)(\s*<script id="video-data" type="application/json">).*?(</script>)', re.S)
     html, n = pat.subn(lambda m: m.group(1) + m.group(2) + blob + m.group(3), html)
@@ -194,9 +194,11 @@ def patch_html(html, total, vids, stats):
         html = pat_ns.sub(lambda m: m.group(1) + '\n' + ns + '\n' + m.group(2), html, count=1)
 
     html = set_stat(html, 'videos', total)
-    html = set_stat(html, 'updated', ymd_cn())
-    html = set_at(html, 'updated',
-                  time.strftime('%Y-%m-%dT%H:%M:%S+08:00', time.gmtime(time.time() + TZ8)))
+    if touch_time:
+        # 只有真实数据变化时才推进「更新时间」；否则保持原值，避免每次运行都产生 diff
+        html = set_stat(html, 'updated', ymd_cn())
+        html = set_at(html, 'updated',
+                      time.strftime('%Y-%m-%dT%H:%M:%S+08:00', time.gmtime(time.time() + TZ8)))
     if stats.get('fans') is not None:
         html = set_stat(html, 'fans', stats['fans'])
     if stats.get('likes') is not None:
@@ -231,10 +233,14 @@ def main():
             print('%-12s 不存在，跳过' % name)
             continue
         html = io.open(path, encoding='utf-8').read()
-        new = patch_html(html, total, vids, stats if name == STATS_FILE else {})
-        if new == html:
-            print('%-12s 无变化' % name)
+        st = stats if name == STATS_FILE else {}
+        # 先按「不推进时间戳」预演：只有真实数据变化才算变化，
+        # 避免每次运行都因 data-at 精确到秒而产生 diff / 无意义提交。
+        probe = patch_html(html, total, vids, st, touch_time=False)
+        if probe == html:
+            print('%-12s 无实质变化（跳过，不产生提交）' % name)
             continue
+        new = patch_html(html, total, vids, st, touch_time=True)
         io.open(path, 'w', encoding='utf-8').write(new)
         print('%-12s 已更新（%d -> %d 字符）' % (name, len(html), len(new)))
         changed.append(name)
