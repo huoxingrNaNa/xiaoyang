@@ -12,9 +12,8 @@
 
 数据来源（不需要登录 / Cookie）：
     app.bilibili.com/x/v2/space/archive/cursor   -> 投稿列表（含播放量、封面、时长）
-    api.bilibili.com/x/web-interface/card        -> 粉丝数
-    api.bilibili.com/x/web-interface/view        -> 每个视频的 stat.like（wbi 签名），求和作为「获赞」
-    （注：card 已不再返回 likes；x/space/upstat 现需登录态，故改为逐视频点赞求和）
+    app.bilibili.com/x/v2/space                  -> 粉丝数 + 获赞（card.likes.like_num）
+    （注：web 的 card 接口已不返回 likes；x/space/upstat 需登录态，故改用 App 空间接口）
 """
 import hashlib
 import io
@@ -71,113 +70,21 @@ def fetch_videos():
     return (d.get('data') or {}).get('count') or len(vids), vids
 
 
-# ---- wbi 签名（web 接口用） ----
-MIXIN_TAB = [46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,
-             27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13,
-             37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4,
-             22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52]
-_WBI = {'mixin': None}
-
-
-def http_json_web(url, tries=4):
-    """带 UA/Referer 的 web 接口请求（偶发 DNS/风控时重试）。"""
-    last = None
-    for _ in range(tries):
-        try:
-            req = urllib.request.Request(url)
-            req.add_header('User-Agent', UA)
-            req.add_header('Referer', 'https://www.bilibili.com/')
-            return json.loads(urllib.request.urlopen(req, timeout=20).read().decode('utf-8'))
-        except Exception as e:
-            last = e
-            time.sleep(1.2)
-    raise last
-
-
-def wbi_mixin_key():
-    if _WBI['mixin']:
-        return _WBI['mixin']
-    d = http_json_web('https://api.bilibili.com/x/web-interface/nav')
-    w = (d.get('data') or {}).get('wbi_img') or {}
-    ik = (w.get('img_url') or '').rsplit('/', 1)[-1].split('.')[0]
-    sk = (w.get('sub_url') or '').rsplit('/', 1)[-1].split('.')[0]
-    if not ik or not sk:
-        raise RuntimeError('获取 wbi key 失败')
-    raw = ik + sk
-    _WBI['mixin'] = ''.join(raw[i] for i in MIXIN_TAB)[:32]
-    return _WBI['mixin']
-
-
-def wbi_get(url, params):
-    p = dict(params)
-    p['wts'] = str(int(time.time()))
-    q = urllib.parse.urlencode(sorted(p.items()))
-    w_rid = hashlib.md5((q + wbi_mixin_key()).encode('utf-8')).hexdigest()
-    return http_json_web(url + '?' + q + '&w_rid=' + w_rid)
-
-
-_PREV = {}
-
-
-def parse_prev_likes(html):
-    """从旧页面的 video-data JSON 里读出 {bvid: like}，用于失败兜底。"""
-    m = re.search(r'<script id="video-data" type="application/json">(.*?)</script>', html, re.S)
-    if not m:
-        return {}
-    try:
-        arr = json.loads(m.group(1))
-    except Exception:
-        return {}
-    out = {}
-    for it in arr:
-        if it.get('bvid') and it.get('like') is not None:
-            out[it['bvid']] = int(it['like'])
-    return out
-
-
-def fetch_likes_from_videos(vids):
-    """逐视频取 stat.like 求和，并把结果回填到 v['like']（随页面一起保存）。
-
-    个别视频请求失败（限流/风控/网络）时，用上一版页面里记录的 like 兜底；
-    既取不到又没有历史值时才返回 None（沿用页面旧值），保证不会把总和算小。
-    """
-    if not vids:
-        return None
-    total = 0
-    for v in vids:
-        b = v.get('bvid')
-        if not b:
-            return None
-        like = None
-        for _ in range(4):
-            try:
-                d = wbi_get('https://api.bilibili.com/x/web-interface/view', {'bvid': b})
-                st = (d.get('data') or {}).get('stat') or {}
-                if st.get('like') is not None:
-                    like = int(st['like'])
-                    break
-            except Exception:
-                pass
-            time.sleep(0.8)
-        if like is None:
-            like = _PREV.get(b)
-            if like is None:
-                print('  [warn] 取点赞失败且无历史值，放弃本次获赞更新: %s' % b)
-                return None
-            print('  [warn] 取点赞失败，沿用历史值 %s = %s' % (b, like))
-        v['like'] = like
-        total += like
-        time.sleep(0.8)
-    return total
-
-
 def fetch_stats(old_likes, vids=None):
-    d = http_json('https://api.bilibili.com/x/web-interface/card?mid=%s&photo=false' % MID)
+    """一次请求拿到粉丝数 + 获赞数。
+
+    来源：app.bilibili.com/x/v2/space（App 签名接口，无需登录 / Cookie）
+        card.fans            -> 粉丝数
+        card.likes.like_num  -> 获赞（B 站口径：视频、专栏、动态累计获赞）
+    """
+    d = http_json('https://app.bilibili.com/x/v2/space', {
+        'vmid': MID, 'mobi_app': 'android', 'platform': 'android',
+        'build': '100000', 'c_locale': 'zh_CN', 's_locale': 'zh_CN',
+    })
     card = ((d.get('data') or {}).get('card') or {})
     likes = card.get('likes')
-    if likes in (None, 0):
-        # card 接口已不再返回 likes（upstat 需要登录态），改用逐视频点赞求和
-        likes = fetch_likes_from_videos(vids)
+    if isinstance(likes, dict):
+        likes = likes.get('like_num')
     if likes in (None, 0):
         likes = old_likes
     return {'fans': card.get('fans'), 'likes': likes}
@@ -253,7 +160,6 @@ def main():
 
     try:
         total, vids = fetch_videos()
-        _PREV.update(parse_prev_likes(stat_html))
         stats = fetch_stats(current_likes(stat_html), vids)
     except Exception as e:
         print('拉取 B 站数据失败：%s' % e)
