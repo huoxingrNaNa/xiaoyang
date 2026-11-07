@@ -130,7 +130,7 @@ def fetch_likes_from_videos(vids):
         if not b:
             return None
         like = None
-        for _ in range(3):
+        for _ in range(4):
             try:
                 d = wbi_get('https://api.bilibili.com/x/web-interface/view', {'bvid': b})
                 st = (d.get('data') or {}).get('stat') or {}
@@ -139,12 +139,12 @@ def fetch_likes_from_videos(vids):
                     break
             except Exception:
                 pass
-            time.sleep(0.4)
+            time.sleep(0.8)
         if like is None:
             print('  [warn] 取点赞失败，放弃本次获赞更新: %s' % b)
             return None
         total += like
-        time.sleep(0.25)
+        time.sleep(0.8)
     return total
 
 
