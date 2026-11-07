@@ -116,11 +116,30 @@ def wbi_get(url, params):
     return http_json_web(url + '?' + q + '&w_rid=' + w_rid)
 
 
-def fetch_likes_from_videos(vids):
-    """逐视频取 stat.like 求和作为「获赞」。
+_PREV = {}
 
-    必须所有视频都取到点赞才返回总和；只要有任何一个失败（限流/风控/网络），
-    就返回 None，让调用方沿用页面旧值 —— 避免「部分失败」把数字算小、写坏页面。
+
+def parse_prev_likes(html):
+    """从旧页面的 video-data JSON 里读出 {bvid: like}，用于失败兜底。"""
+    m = re.search(r'<script id="video-data" type="application/json">(.*?)</script>', html, re.S)
+    if not m:
+        return {}
+    try:
+        arr = json.loads(m.group(1))
+    except Exception:
+        return {}
+    out = {}
+    for it in arr:
+        if it.get('bvid') and it.get('like') is not None:
+            out[it['bvid']] = int(it['like'])
+    return out
+
+
+def fetch_likes_from_videos(vids):
+    """逐视频取 stat.like 求和，并把结果回填到 v['like']（随页面一起保存）。
+
+    个别视频请求失败（限流/风控/网络）时，用上一版页面里记录的 like 兜底；
+    既取不到又没有历史值时才返回 None（沿用页面旧值），保证不会把总和算小。
     """
     if not vids:
         return None
@@ -141,8 +160,12 @@ def fetch_likes_from_videos(vids):
                 pass
             time.sleep(0.8)
         if like is None:
-            print('  [warn] 取点赞失败，放弃本次获赞更新: %s' % b)
-            return None
+            like = _PREV.get(b)
+            if like is None:
+                print('  [warn] 取点赞失败且无历史值，放弃本次获赞更新: %s' % b)
+                return None
+            print('  [warn] 取点赞失败，沿用历史值 %s = %s' % (b, like))
+        v['like'] = like
         total += like
         time.sleep(0.8)
     return total
@@ -230,6 +253,7 @@ def main():
 
     try:
         total, vids = fetch_videos()
+        _PREV.update(parse_prev_likes(stat_html))
         stats = fetch_stats(current_likes(stat_html), vids)
     except Exception as e:
         print('拉取 B 站数据失败：%s' % e)
