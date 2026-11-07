@@ -117,23 +117,35 @@ def wbi_get(url, params):
 
 
 def fetch_likes_from_videos(vids):
-    """逐视频取 stat.like 求和作为「获赞」；全部失败返回 None。"""
+    """逐视频取 stat.like 求和作为「获赞」。
+
+    必须所有视频都取到点赞才返回总和；只要有任何一个失败（限流/风控/网络），
+    就返回 None，让调用方沿用页面旧值 —— 避免「部分失败」把数字算小、写坏页面。
+    """
     if not vids:
         return None
-    total, ok = 0, 0
+    total = 0
     for v in vids:
         b = v.get('bvid')
         if not b:
-            continue
-        try:
-            d = wbi_get('https://api.bilibili.com/x/web-interface/view', {'bvid': b})
-            st = (d.get('data') or {}).get('stat') or {}
-            if st.get('like') is not None:
-                total += int(st['like'])
-                ok += 1
-        except Exception:
-            continue
-    return total if ok else None
+            return None
+        like = None
+        for _ in range(3):
+            try:
+                d = wbi_get('https://api.bilibili.com/x/web-interface/view', {'bvid': b})
+                st = (d.get('data') or {}).get('stat') or {}
+                if st.get('like') is not None:
+                    like = int(st['like'])
+                    break
+            except Exception:
+                pass
+            time.sleep(0.4)
+        if like is None:
+            print('  [warn] 取点赞失败，放弃本次获赞更新: %s' % b)
+            return None
+        total += like
+        time.sleep(0.25)
+    return total
 
 
 def fetch_stats(old_likes, vids=None):
