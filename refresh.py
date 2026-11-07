@@ -136,6 +136,9 @@ def patch_html(html, total, vids, stats, touch_time=True):
         html = pat_ns.sub(lambda m: m.group(1) + '\n' + ns + '\n' + m.group(2), html, count=1)
 
     html = set_stat(html, 'videos', total)
+    # 兜底：count-tag 若漏了 data-stat（works.html 曾经就是），也按投稿数同步
+    html = re.subn(r'(<span class="count-tag">)(\d+)(</span>)',
+                   lambda m: m.group(1) + str(total) + m.group(3), html)[0]
     if touch_time:
         # 只有真实数据变化时才推进「更新时间」；否则保持原值，避免每次运行都产生 diff
         html = set_stat(html, 'updated', ymd_cn())
